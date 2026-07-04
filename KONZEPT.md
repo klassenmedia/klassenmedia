@@ -1,0 +1,216 @@
+# Planbar — Social-Media-Planungstool (Arbeitstitel)
+
+> SaaS-Produkt zum Planen, Erstellen und Veröffentlichen von Social-Media-Inhalten
+> für **beliebig viele Accounts**, mit KI-Unterstützung, monatlichem Abo-Modell und
+> Verkauf über eine eigene Landingpage.
+>
+> Der Name „Planbar" ist ein Arbeitstitel und kann jederzeit geändert werden.
+
+---
+
+## 1. Produktvision
+
+Ein Planungstool wie Metricool oder Buffer — aber ohne künstliche Account-Limits.
+Kunden (Freelancer, Agenturen, Unternehmen) verbinden **unbegrenzt viele
+Social-Media-Profile**, planen Inhalte **beliebig weit im Voraus** und bekommen
+dabei **KI-Unterstützung** für Texte und Bilder. Bezahlt wird monatlich per Abo.
+
+**Differenzierung gegenüber Metricool & Co.:**
+
+1. **Keine Account-Limits** — der Tarif skaliert nicht über die Anzahl der Profile.
+2. **Flexible KI-Nutzung** — Kunden bringen ihren eigenen API-Key mit (BYO-Key,
+   eigene Kosten) *oder* kaufen Credit-Kontingente direkt bei uns (mit Marge).
+3. **Langfrist-Planung** — Kalender ohne Zeitlimit nach vorn, Kampagnen- und
+   Serienplanung (z. B. „jeden Dienstag 9:00 für die nächsten 12 Monate").
+
+## 2. Zielgruppen
+
+| Zielgruppe | Bedarf | Tarif-Fit |
+|---|---|---|
+| Solo-Creator / Freelancer | 3–10 Profile, einfache Planung | Starter |
+| Kleine Unternehmen | Mehrere Kanäle, KI-Texte, Team-Freigabe | Pro |
+| Agenturen | Viele Kunden-Workspaces, Mandantenfähigkeit, White-Label | Agency |
+
+## 3. Feature-Set
+
+### 3.1 Kernfunktionen (MVP)
+
+- **Workspaces (Mandanten):** Ein Nutzer kann mehrere Workspaces besitzen
+  (z. B. eine Agentur pro Kunde einen). Abrechnung pro Workspace.
+- **Unbegrenzte Social Accounts:** Instagram, Facebook, TikTok, LinkedIn,
+  YouTube, X (Twitter), Pinterest. Anbindung per OAuth über die offiziellen APIs.
+- **Planungskalender:** Monats- und Wochenansicht, Drag & Drop, Farbcodierung
+  pro Plattform, beliebig weit in die Zukunft planbar.
+- **Post-Composer:** Ein Entwurf → mehrere Plattformen gleichzeitig, mit
+  plattformspezifischen Anpassungen (Textlängen, Hashtags, Formate).
+- **Serien & Kampagnen:** Wiederkehrende Slots („Content-Rezepte"), Kampagnen
+  mit eigener Farbe im Kalender.
+- **Medienbibliothek:** Upload, Wiederverwendung, KI-generierte Bilder.
+- **Status-Workflow:** Entwurf → geplant → freigegeben → veröffentlicht / Fehler.
+
+### 3.2 KI-Unterstützung
+
+Zwei Modi, pro Workspace wählbar:
+
+1. **BYO-Key (Bring Your Own Key):** Kunde hinterlegt eigenen API-Key
+   (Anthropic, OpenAI, …). Verbrauch läuft über das Konto des Kunden,
+   wir berechnen nichts extra. Keys werden verschlüsselt gespeichert (AES-256-GCM,
+   Schlüssel im KMS/ENV, niemals im Klartext in der DB).
+2. **Credit-Kontingente:** Kunde kauft Credits bei uns (Stripe One-Time-Payment
+   oder monatliches Add-on). Wir rufen die KI-APIs mit unserem Plattform-Key auf
+   und rechnen den Verbrauch in Credits ab — **mit Marge** (siehe 5.3).
+
+KI-Funktionen:
+
+- Caption-/Text-Vorschläge pro Plattform (Ton, Länge, Hashtags)
+- Bild-Generierung für Posts
+- Content-Ideen & Themenplan („Erstelle mir einen Monatsplan für ein Fitnessstudio")
+- Recycling: alte Top-Posts umschreiben und neu einplanen
+
+### 3.3 Später (Post-MVP)
+
+- Analytics (Reichweite, Engagement, beste Posting-Zeiten)
+- Team-Rollen & Freigabe-Workflows, Kunden-Freigabelinks
+- Inbox (Kommentare/DMs zentral beantworten)
+- White-Label für Agenturen
+- Mobile App
+
+## 4. Preismodell (Entwurf)
+
+Alle Tarife: **unbegrenzte Social Accounts**. Differenzierung über Workspaces,
+Teammitglieder und inkludierte KI-Credits.
+
+| | **Starter** 19 €/Monat | **Pro** 49 €/Monat | **Agency** 129 €/Monat |
+|---|---|---|---|
+| Workspaces | 1 | 3 | unbegrenzt |
+| Teammitglieder | 1 | 5 | unbegrenzt |
+| Social Accounts | ∞ | ∞ | ∞ |
+| Planungshorizont | ∞ | ∞ | ∞ |
+| KI-Credits inklusive / Monat | 100 | 500 | 2.000 |
+| BYO-API-Key | ✓ | ✓ | ✓ |
+| Freigabe-Workflow | – | ✓ | ✓ |
+| White-Label | – | – | ✓ |
+
+Jährliche Zahlung: 2 Monate geschenkt (≈ −17 %). 14 Tage kostenlos testen,
+ohne Kreditkarte.
+
+## 5. Monetarisierung & Billing
+
+### 5.1 Stripe als Zahlungsanbieter
+
+- **Stripe Billing** für Abos (monatlich/jährlich), Trial, Upgrades/Downgrades
+  mit anteiliger Verrechnung (Proration).
+- **Stripe Checkout + Customer Portal** — wir bauen keine eigene Karten-UI,
+  damit minimaler PCI-Scope.
+- **Webhooks** (`checkout.session.completed`, `invoice.paid`,
+  `customer.subscription.updated/deleted`) halten den Abo-Status in unserer DB aktuell.
+- Rechnungen, Steuern (OSS/VAT) über **Stripe Tax**.
+- Alternative, falls „Merchant of Record" gewünscht (weniger Steuer-Aufwand):
+  Paddle oder Lemon Squeezy — Entscheidung vor Launch.
+
+### 5.2 Credit-Pakete (One-Time & Add-on)
+
+| Paket | Credits | Preis |
+|---|---|---|
+| S | 500 | 9 € |
+| M | 2.000 | 29 € |
+| L | 10.000 | 119 € |
+
+### 5.3 Margen-Kalkulation Credits
+
+1 Credit = interne Verrechnungseinheit. Richtwert: 1 Credit ≈ 1 KI-Textaktion,
+Bild ≈ 4–10 Credits (je nach Modell/Auflösung).
+
+- Einkauf (API-Kosten) pro Credit: ~0,4–0,9 ct
+- Verkauf pro Credit (Paket M): 1,45 ct
+- **Brutto-Marge: ~40–70 %**, Puffer für Modellpreis-Schwankungen eingeplant.
+
+Der Credit-Verbrauch wird pro Aktion in einer `CreditTransaction`-Tabelle
+geloggt (Audit + Anzeige im UI).
+
+## 6. Technische Architektur
+
+### 6.1 Stack
+
+| Ebene | Technologie | Warum |
+|---|---|---|
+| Frontend + Backend | **Next.js (App Router, TypeScript)** | Ein Codebase, SSR für Landingpage/SEO, API-Routes fürs Backend |
+| Styling | **Tailwind CSS 4** | Schnell, konsistentes Design-System |
+| Datenbank | **PostgreSQL + Prisma** | Relational, Mandantenfähigkeit, Migrations |
+| Auth | **Auth.js (NextAuth)** oder Clerk | E-Mail + OAuth-Login |
+| Jobs/Scheduler | **Worker + Queue (BullMQ/Redis)** oder Inngest/Trigger.dev | Zuverlässiges zeitgesteuertes Publishing, Retries |
+| Zahlungen | **Stripe** | Abos + One-Time Credits, Webhooks |
+| KI | **Anthropic / OpenAI / Fal (Bilder)** | BYO-Key oder Plattform-Key |
+| Hosting | Vercel (App) + Railway/Fly (Worker + Postgres + Redis) | Einfacher Start, skaliert |
+| Medien-Storage | S3-kompatibel (Cloudflare R2) | Günstig, CDN |
+
+### 6.2 Publishing-Pipeline (der kritische Teil)
+
+```
+Post (geplant, 12.08. 09:00)
+   └─> Scheduler (Cron, minütlich): fällige Posts holen
+         └─> Queue-Job pro Post & Plattform
+               └─> Publisher-Adapter (Instagram/TikTok/…)
+                     ├─ Erfolg  → Status "veröffentlicht" + Plattform-Post-ID
+                     └─ Fehler  → Retry (3×, exponentiell) → Status "Fehler" + Benachrichtigung
+```
+
+- **Adapter-Pattern:** pro Plattform ein Modul mit einheitlichem Interface
+  (`validate(post)`, `publish(post, account)`), damit neue Plattformen leicht
+  ergänzbar sind.
+- OAuth-Tokens verschlüsselt, Refresh-Handling pro Plattform.
+- **Wichtig:** Für Instagram/Facebook/TikTok/… sind App-Reviews der Plattformen
+  nötig (Meta App Review, TikTok Developer). Früh beantragen — Vorlaufzeit Wochen.
+  Bis dahin Entwicklung über Sandbox/Test-Accounts.
+
+### 6.3 Mandantenfähigkeit
+
+Alle Kern-Tabellen hängen an `workspaceId`. Zugriffskontrolle in einer
+zentralen Service-Schicht (kein direkter Prisma-Zugriff aus Routen).
+Details: `app/prisma/schema.prisma`.
+
+## 7. UI/UX-Leitlinien
+
+- **Der Kalender ist die App.** Planer als Startbildschirm nach Login,
+  alles andere (Accounts, Billing, KI) ist Unterstützung.
+- Composer als Overlay über dem Kalender — Kontext nie verlassen.
+- Farbcodierung pro Plattform, konsistent in Kalender, Listen, Filtern.
+- Leere Zustände verkaufen Features („Verbinde deinen ersten Account …").
+- Dunkles, ruhiges UI mit einer Akzentfarbe (Violett), großzügiger Weißraum,
+  Geist als Schrift. Landingpage nutzt dieselbe Designsprache.
+- Tastatur-Shortcuts für Power-User (n = neuer Post, ←/→ = Monat wechseln).
+
+## 8. Roadmap
+
+| Phase | Inhalt | Ergebnis |
+|---|---|---|
+| **0 — Prototyp (dieses Repo)** | UI/UX komplett klickbar mit Demo-Daten: Kalender, Composer, Accounts, KI-Einstellungen, Billing-Seite, Landingpage | Klickbarer Prototyp zum Validieren & Zeigen |
+| **1 — Fundament** | Postgres + Prisma live, Auth, Workspaces, echte Persistenz | Nutzbares internes Tool |
+| **2 — Publishing** | Meta (IG/FB) + LinkedIn Publishing, Scheduler/Queue, App-Reviews | Erste echte Veröffentlichungen |
+| **3 — Billing** | Stripe Abos + Trial + Customer Portal, Credit-Pakete | Verkaufsfähig (Beta) |
+| **4 — KI** | Text-Assist, Bild-Generierung, BYO-Key + Credit-Abrechnung | Voller Funktionsumfang |
+| **5 — Launch** | Landingpage live, Onboarding, E-Mails, Analytics-Basics | Öffentlicher Launch |
+
+## 9. Rechtliches (nicht vergessen)
+
+- AGB, Datenschutzerklärung (DSGVO), AV-Vertrag für Agentur-Kunden
+- Impressum auf der Landingpage
+- Plattform-Richtlinien (Meta Platform Terms etc.)
+- Bei Credit-Verkauf: klare Verbrauchsanzeige, keine Verfalls-Überraschungen
+
+---
+
+## Repo-Struktur
+
+```
+/
+├── KONZEPT.md          ← dieses Dokument
+└── app/                ← Next.js-App (Prototyp, lauffähig ohne externe Dienste)
+    ├── prisma/schema.prisma   ← Ziel-Datenmodell für Produktion
+    └── src/
+        ├── app/               ← Landingpage (/) + App (/app/…)
+        ├── components/        ← UI-Bausteine
+        └── lib/               ← Typen, Demo-Daten, Store
+```
+
+**Prototyp starten:** `cd app && npm install && npm run dev` → http://localhost:3000
