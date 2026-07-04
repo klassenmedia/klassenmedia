@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
-import { Button, inputCls, Modal, PlatformChip, StatusBadge } from "@/components/ui";
-import { PLATFORMS, Post, PostStatus, toDateKey } from "@/lib/types";
+import { Button, FormatIcon, inputCls, Modal, PlatformChip, StatusBadge } from "@/components/ui";
+import { FORMATS, PLATFORMS, Post, PostFormat, PostStatus, toDateKey } from "@/lib/types";
 import { AI_CAPTION_IDEAS } from "@/lib/demo-data";
 
 const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
@@ -19,7 +19,8 @@ interface ComposerState {
   time: string;
   accountIds: string[];
   status: PostStatus;
-  hasImage: boolean;
+  format: PostFormat;
+  media: number[];
 }
 
 export default function PlannerPage() {
@@ -78,13 +79,35 @@ export default function PlannerPage() {
       time: "10:00",
       accountIds: accounts.slice(0, 1).map((a) => a.id),
       status: "scheduled",
-      hasImage: false,
+      format: "image",
+      media: [],
     });
   }
 
   function openEdit(post: Post) {
     setAiHint(null);
-    setComposer({ ...post, hasImage: post.hasImage ?? false });
+    setComposer({ ...post, media: [...post.media] });
+  }
+
+  function setFormat(format: PostFormat) {
+    setComposer((c) => {
+      if (!c) return c;
+      // Medien auf das Limit des neuen Formats kürzen
+      return { ...c, format, media: c.media.slice(0, FORMATS[format].maxMedia) };
+    });
+  }
+
+  function addMedia() {
+    setComposer((c) => {
+      if (!c || c.media.length >= FORMATS[c.format].maxMedia) return c;
+      return { ...c, media: [...c.media, (c.media.length * 73 + c.body.length * 31 + 40) % 360] };
+    });
+  }
+
+  function removeMedia(index: number) {
+    setComposer((c) =>
+      c ? { ...c, media: c.media.filter((_, i) => i !== index) } : c
+    );
   }
 
   function suggestCaption() {
@@ -112,7 +135,8 @@ export default function PlannerPage() {
       time: composer.time,
       accountIds: composer.accountIds,
       status: composer.status,
-      hasImage: composer.hasImage,
+      format: composer.format,
+      media: composer.media,
     });
     setComposer(null);
   }
@@ -176,7 +200,7 @@ export default function PlannerPage() {
                   <div className="mb-1 flex items-center justify-between px-1">
                     <span
                       className={`flex h-6 w-6 items-center justify-center rounded-full text-xs ${
-                        isToday ? "bg-accent font-bold text-white" : "text-muted"
+                        isToday ? "bg-accent font-bold text-accent-contrast" : "text-muted"
                       }`}
                     >
                       {day.getDate()}
@@ -205,6 +229,9 @@ export default function PlannerPage() {
                           />
                           <span className="shrink-0 font-mono text-[10px] text-muted">
                             {post.time}
+                          </span>
+                          <span className="text-muted">
+                            <FormatIcon format={post.format} size={11} />
                           </span>
                           <span className="truncate">{post.body}</span>
                         </button>
@@ -332,15 +359,75 @@ export default function PlannerPage() {
               </div>
             </div>
 
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-muted">
-              <input
-                type="checkbox"
-                checked={composer.hasImage}
-                onChange={(e) => setComposer({ ...composer, hasImage: e.target.checked })}
-                className="accent-[var(--accent)]"
-              />
-              Bild anhängen (Medienbibliothek folgt in Phase 1)
-            </label>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Format</label>
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(FORMATS) as PostFormat[]).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFormat(f)}
+                    title={FORMATS[f].hint}
+                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm transition ${
+                      composer.format === f
+                        ? "border-accent bg-accent-soft text-foreground"
+                        : "border-line text-muted hover:border-accent/40"
+                    }`}
+                  >
+                    <FormatIcon format={f} size={13} />
+                    {FORMATS[f].label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs text-muted">{FORMATS[composer.format].hint}</p>
+            </div>
+
+            {FORMATS[composer.format].maxMedia > 0 && (
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">
+                  Medien ({composer.media.length}/{FORMATS[composer.format].maxMedia})
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {composer.media.map((hue, i) => (
+                    <div
+                      key={i}
+                      className={`group/media relative overflow-hidden rounded-xl border border-line ${
+                        composer.format === "story" ? "h-24 w-14" : "h-16 w-16"
+                      }`}
+                      style={{
+                        background: `linear-gradient(135deg, hsl(${hue} 55% 55%), hsl(${(hue + 60) % 360} 55% 35%))`,
+                      }}
+                    >
+                      {composer.format === "video" && (
+                        <span className="absolute inset-0 flex items-center justify-center text-white/90">
+                          ▶
+                        </span>
+                      )}
+                      <button
+                        onClick={() => removeMedia(i)}
+                        aria-label="Medium entfernen"
+                        className="absolute right-0.5 top-0.5 hidden h-5 w-5 items-center justify-center rounded-md bg-black/50 text-xs text-white group-hover/media:flex"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  {composer.media.length < FORMATS[composer.format].maxMedia && (
+                    <button
+                      onClick={addMedia}
+                      className={`flex items-center justify-center rounded-xl border border-dashed border-line text-lg text-muted transition hover:border-accent hover:text-accent ${
+                        composer.format === "story" ? "h-24 w-14" : "h-16 w-16"
+                      }`}
+                    >
+                      +
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1.5 text-xs text-muted">
+                  Demo-Platzhalter — Upload &amp; Medienbibliothek folgen in Phase 1, KI-Bilder
+                  kommen aus dem KI-Studio.
+                </p>
+              </div>
+            )}
 
             <div className="flex items-center justify-between border-t border-line pt-4">
               <div>

@@ -1,6 +1,60 @@
 @import "tailwindcss";
 
+/*
+  Theme-Tokens: :root = heller Modus (Default), der dunkle Modus überschreibt
+  nur die Token-Werte — einmal über die System-Einstellung (prefers-color-scheme),
+  einmal explizit über data-theme (der Umschalter in der App gewinnt immer).
+  Komponenten stylen ausschließlich über Tokens, nie direkt in den Media Queries.
+*/
+
 :root {
+  --background: #f7f7fa;
+  --surface: #ffffff;
+  --surface-2: #f0f0f5;
+  --border: #e4e4ec;
+  --foreground: #1a1a24;
+  --muted: #6b6b7c;
+  --accent: #6d5ce6;
+  --accent-soft: rgba(109, 92, 230, 0.12);
+  --accent-contrast: #ffffff;
+  --success: #0e9f6e;
+  --warning: #b45309;
+  --danger: #dc2626;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b0b11;
+    --surface: #131320;
+    --surface-2: #1a1a2b;
+    --border: #26263a;
+    --foreground: #e9e9f2;
+    --muted: #9a9ab0;
+    --accent: #7c6cff;
+    --accent-soft: rgba(124, 108, 255, 0.14);
+    --accent-contrast: #ffffff;
+    --success: #34d399;
+    --warning: #fbbf24;
+    --danger: #f87171;
+  }
+}
+
+:root[data-theme="light"] {
+  --background: #f7f7fa;
+  --surface: #ffffff;
+  --surface-2: #f0f0f5;
+  --border: #e4e4ec;
+  --foreground: #1a1a24;
+  --muted: #6b6b7c;
+  --accent: #6d5ce6;
+  --accent-soft: rgba(109, 92, 230, 0.12);
+  --accent-contrast: #ffffff;
+  --success: #0e9f6e;
+  --warning: #b45309;
+  --danger: #dc2626;
+}
+
+:root[data-theme="dark"] {
   --background: #0b0b11;
   --surface: #131320;
   --surface-2: #1a1a2b;
@@ -9,6 +63,7 @@
   --muted: #9a9ab0;
   --accent: #7c6cff;
   --accent-soft: rgba(124, 108, 255, 0.14);
+  --accent-contrast: #ffffff;
   --success: #34d399;
   --warning: #fbbf24;
   --danger: #f87171;
@@ -23,6 +78,7 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-contrast: var(--accent-contrast);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
@@ -38,7 +94,7 @@ body {
 
 ::selection {
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-contrast);
 }
 
 /* dezente Scrollbars im App-Bereich */

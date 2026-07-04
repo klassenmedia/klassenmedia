@@ -29,6 +29,16 @@ export interface SocialAccount {
 
 export type PostStatus = "draft" | "scheduled" | "published" | "failed";
 
+export type PostFormat = "text" | "image" | "video" | "carousel" | "story";
+
+export const FORMATS: Record<PostFormat, { label: string; hint: string; maxMedia: number }> = {
+  text: { label: "Text", hint: "Nur Text — ideal für X und LinkedIn", maxMedia: 0 },
+  image: { label: "Bild", hint: "Ein Bild im Feed", maxMedia: 1 },
+  video: { label: "Video / Reel", hint: "Video, Reel oder Short", maxMedia: 1 },
+  carousel: { label: "Karussell", hint: "Bis zu 10 Bilder zum Durchwischen", maxMedia: 10 },
+  story: { label: "Story", hint: "24 h sichtbar, Hochformat 9:16", maxMedia: 1 },
+};
+
 export const STATUS_LABELS: Record<PostStatus, string> = {
   draft: "Entwurf",
   scheduled: "Geplant",
@@ -45,7 +55,9 @@ export interface Post {
   time: string;
   accountIds: string[];
   status: PostStatus;
-  hasImage?: boolean;
+  format: PostFormat;
+  /** Demo-Medien: ein Farbton (hue) pro Platzhalter-Kachel */
+  media: number[];
 }
 
 export type InviteStatus = "pending" | "accepted" | "revoked";

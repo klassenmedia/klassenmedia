@@ -53,6 +53,9 @@ dabei **KI-Unterstützung** für Texte und Bilder. Bezahlt wird monatlich per Ab
   pro Plattform, beliebig weit in die Zukunft planbar.
 - **Post-Composer:** Ein Entwurf → mehrere Plattformen gleichzeitig, mit
   plattformspezifischen Anpassungen (Textlängen, Hashtags, Formate).
+- **Alle gängigen Formate:** Text, Bild, Video/Reel/Short, Karussell (bis 10
+  Medien) und Story (9:16). Der Composer validiert pro Plattform, was möglich
+  ist (z. B. Karussell nicht auf X, Story nur IG/FB), bevor geplant wird.
 - **Serien & Kampagnen:** Wiederkehrende Slots („Content-Rezepte"), Kampagnen
   mit eigener Farbe im Kalender.
 - **Medienbibliothek:** Upload, Wiederverwendung, KI-generierte Bilder.

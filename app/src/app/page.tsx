@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const FEATURES = [
   {
@@ -98,7 +99,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-40 border-b border-line bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-sm font-bold text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-sm font-bold text-accent-contrast">
               P
             </span>
             <span className="text-lg font-semibold tracking-tight">Planbar</span>
@@ -108,12 +109,15 @@ export default function LandingPage() {
             <a href="#pricing" className="transition hover:text-foreground">Preise</a>
             <a href="#faq" className="transition hover:text-foreground">FAQ</a>
           </nav>
-          <Link
-            href="/app"
-            className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-          >
-            Demo öffnen
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link
+              href="/app"
+              className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-contrast transition hover:brightness-110"
+            >
+              Demo öffnen
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -123,7 +127,7 @@ export default function LandingPage() {
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(600px 400px at 50% -10%, rgba(124,108,255,0.25), transparent 70%)",
+              "radial-gradient(600px 400px at 50% -10%, color-mix(in srgb, var(--accent) 25%, transparent), transparent 70%)",
           }}
         />
         <div className="relative mx-auto max-w-4xl px-6 pb-20 pt-24 text-center">
@@ -144,7 +148,7 @@ export default function LandingPage() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/app"
-              className="rounded-xl bg-accent px-6 py-3 font-medium text-white transition hover:brightness-110"
+              className="rounded-xl bg-accent px-6 py-3 font-medium text-accent-contrast transition hover:brightness-110"
             >
               Kostenlos testen
             </Link>
@@ -224,11 +228,13 @@ export default function LandingPage() {
             <div
               key={p.name}
               className={`relative flex flex-col rounded-2xl border bg-surface p-7 ${
-                p.highlight ? "border-accent shadow-[0_0_40px_rgba(124,108,255,0.15)]" : "border-line"
+                p.highlight
+                  ? "border-accent shadow-[0_0_40px_color-mix(in_srgb,var(--accent)_15%,transparent)]"
+                  : "border-line"
               }`}
             >
               {p.highlight && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-1 text-xs font-medium text-white">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-contrast">
                   Am beliebtesten
                 </span>
               )}
@@ -250,7 +256,7 @@ export default function LandingPage() {
                 href="/app"
                 className={`mt-8 rounded-xl px-4 py-2.5 text-center text-sm font-medium transition ${
                   p.highlight
-                    ? "bg-accent text-white hover:brightness-110"
+                    ? "bg-accent text-accent-contrast hover:brightness-110"
                     : "border border-line hover:bg-surface-2"
                 }`}
               >
@@ -286,7 +292,7 @@ export default function LandingPage() {
           className="rounded-3xl border border-accent/30 p-10 text-center"
           style={{
             background:
-              "radial-gradient(400px 200px at 50% 0%, rgba(124,108,255,0.2), var(--surface))",
+              "radial-gradient(400px 200px at 50% 0%, color-mix(in srgb, var(--accent) 20%, var(--surface)), var(--surface))",
           }}
         >
           <h2 className="text-3xl font-semibold tracking-tight">
@@ -297,7 +303,7 @@ export default function LandingPage() {
           </p>
           <Link
             href="/app"
-            className="mt-7 inline-block rounded-xl bg-accent px-8 py-3 font-medium text-white transition hover:brightness-110"
+            className="mt-7 inline-block rounded-xl bg-accent px-8 py-3 font-medium text-accent-contrast transition hover:brightness-110"
           >
             Jetzt kostenlos testen
           </Link>
@@ -308,7 +314,7 @@ export default function LandingPage() {
       <footer className="border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8 text-sm text-muted">
           <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent text-xs font-bold text-white">
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent text-xs font-bold text-accent-contrast">
               P
             </span>
             Planbar · Prototyp

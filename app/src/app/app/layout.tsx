@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { StoreProvider, useStore } from "@/lib/store";
 import { PLANS } from "@/lib/types";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV = [
   {
@@ -58,12 +59,15 @@ function Sidebar() {
 
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-surface">
-      <Link href="/" className="flex items-center gap-2.5 px-5 py-5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-sm font-bold text-white">
-          P
-        </span>
-        <span className="text-lg font-semibold tracking-tight">Planbar</span>
-      </Link>
+      <div className="flex items-center justify-between px-5 py-5">
+        <Link href="/" className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-sm font-bold text-accent-contrast">
+            P
+          </span>
+          <span className="text-lg font-semibold tracking-tight">Planbar</span>
+        </Link>
+        <ThemeToggle />
+      </div>
 
       <nav className="flex flex-1 flex-col gap-1 px-3">
         {NAV.map((item) => {
@@ -99,7 +103,7 @@ function Sidebar() {
         </div>
         <Link
           href="/app/billing"
-          className="mt-3 block rounded-lg bg-accent px-3 py-1.5 text-center font-medium text-white transition hover:brightness-110"
+          className="mt-3 block rounded-lg bg-accent px-3 py-1.5 text-center font-medium text-accent-contrast transition hover:brightness-110"
         >
           Verwalten
         </Link>

@@ -26,7 +26,8 @@ export function buildDemoPosts(): Post[] {
       time: "09:00",
       accountIds: ["acc-ig-1", "acc-fb-1"],
       status: "published",
-      hasImage: true,
+      format: "image",
+      media: [210],
     },
     {
       id: "post-2",
@@ -35,6 +36,8 @@ export function buildDemoPosts(): Post[] {
       time: "18:30",
       accountIds: ["acc-li-1"],
       status: "published",
+      format: "text",
+      media: [],
     },
     {
       id: "post-3",
@@ -43,7 +46,8 @@ export function buildDemoPosts(): Post[] {
       time: "12:00",
       accountIds: ["acc-ig-1", "acc-tt-1"],
       status: "scheduled",
-      hasImage: true,
+      format: "video",
+      media: [280],
     },
     {
       id: "post-4",
@@ -52,6 +56,8 @@ export function buildDemoPosts(): Post[] {
       time: "10:00",
       accountIds: ["acc-fb-1", "acc-ig-1"],
       status: "scheduled",
+      format: "image",
+      media: [30],
     },
     {
       id: "post-5",
@@ -60,7 +66,8 @@ export function buildDemoPosts(): Post[] {
       time: "16:00",
       accountIds: ["acc-yt-1"],
       status: "scheduled",
-      hasImage: true,
+      format: "video",
+      media: [150],
     },
     {
       id: "post-6",
@@ -69,6 +76,8 @@ export function buildDemoPosts(): Post[] {
       time: "08:30",
       accountIds: ["acc-li-1", "acc-fb-1"],
       status: "scheduled",
+      format: "text",
+      media: [],
     },
     {
       id: "post-7",
@@ -77,6 +86,8 @@ export function buildDemoPosts(): Post[] {
       time: "11:15",
       accountIds: ["acc-ig-1"],
       status: "scheduled",
+      format: "story",
+      media: [330],
     },
     {
       id: "post-8",
@@ -85,6 +96,8 @@ export function buildDemoPosts(): Post[] {
       time: "09:00",
       accountIds: ["acc-ig-1", "acc-tt-1", "acc-fb-1"],
       status: "draft",
+      format: "carousel",
+      media: [45, 90, 200],
     },
   ];
 }

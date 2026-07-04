@@ -70,7 +70,7 @@ export default function AiPage() {
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">Credits von Planbar</h3>
             {aiMode === "credits" && (
-              <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-white">
+              <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-contrast">
                 Aktiv
               </span>
             )}
@@ -96,7 +96,7 @@ export default function AiPage() {
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">Eigener API-Key (BYO)</h3>
             {aiMode === "byo" && (
-              <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-white">
+              <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-contrast">
                 Aktiv
               </span>
             )}
@@ -167,7 +167,7 @@ export default function AiPage() {
                 }`}
               >
                 {pkg.popular && (
-                  <span className="absolute -top-2.5 left-4 rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-medium text-white">
+                  <span className="absolute -top-2.5 left-4 rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-medium text-accent-contrast">
                     Beliebt
                   </span>
                 )}

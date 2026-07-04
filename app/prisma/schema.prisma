@@ -123,6 +123,14 @@ model ConnectionInvite {
 
 // ── Inhalte & Planung ─────────────────────────────────────────────────
 
+enum PostFormat {
+  TEXT
+  IMAGE
+  VIDEO    // Video, Reel, Short
+  CAROUSEL // bis zu 10 Medien
+  STORY    // 24h, 9:16
+}
+
 enum PostStatus {
   DRAFT       // Entwurf
   SCHEDULED   // geplant
@@ -152,6 +160,7 @@ model Post {
   campaignId  String?
   // Basistext; plattformspezifische Abweichungen liegen am PostTarget
   body        String
+  format      PostFormat   @default(IMAGE)
   scheduledAt DateTime? // null = Entwurf ohne Termin
   timezone    String       @default("Europe/Berlin")
   status      PostStatus   @default(DRAFT)

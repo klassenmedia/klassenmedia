@@ -30,7 +30,7 @@ export default function BillingPage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">{p.name}</h3>
                 {active && (
-                  <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-white">
+                  <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-contrast">
                     Aktueller Tarif
                   </span>
                 )}
