@@ -30,6 +30,7 @@ model Workspace {
   createdAt          DateTime            @default(now())
   members            WorkspaceMember[]
   socialAccounts     SocialAccount[]
+  connectionInvites  ConnectionInvite[]
   posts              Post[]
   campaigns          Campaign[]
   mediaAssets        MediaAsset[]
@@ -89,6 +90,35 @@ model SocialAccount {
 
   @@unique([workspaceId, platform, providerAccountId])
   @@index([workspaceId])
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+// Verbindungslink für Kunden-Onboarding: Agentur erzeugt Link, Kunde öffnet ihn,
+// durchläuft den OAuth-Flow der Plattform und der Account landet im Workspace —
+// ohne dass Passwörter geteilt werden.
+model ConnectionInvite {
+  id              String       @id @default(cuid())
+  workspace       Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId     String
+  // Einmal-Token für die URL (/connect/<token>), kryptographisch zufällig
+  token           String       @unique
+  // optional vorgegeben; null = Kunde wählt die Plattform selbst
+  platform        Platform?
+  clientName      String? // Anzeige "Einladung für Bäckerei Berger"
+  status          InviteStatus @default(PENDING)
+  expiresAt       DateTime // z. B. 7 Tage gültig
+  createdAt       DateTime     @default(now())
+  acceptedAt      DateTime?
+  // nach Annahme: der daraus entstandene Account
+  socialAccountId String?
+
+  @@index([workspaceId, status])
 }
 
 // ── Inhalte & Planung ─────────────────────────────────────────────────

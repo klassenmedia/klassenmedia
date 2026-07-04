@@ -48,6 +48,18 @@ export interface Post {
   hasImage?: boolean;
 }
 
+export type InviteStatus = "pending" | "accepted" | "revoked";
+
+/** Verbindungslink, mit dem ein Kunde seinen Account selbst freigibt */
+export interface ConnectionInvite {
+  id: string;
+  platform: Platform;
+  clientName: string;
+  token: string;
+  status: InviteStatus;
+  createdAt: string; // dd.mm.yyyy
+}
+
 export type AiMode = "credits" | "byo";
 
 export interface CreditEntry {

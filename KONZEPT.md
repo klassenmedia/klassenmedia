@@ -38,7 +38,17 @@ dabei **KI-Unterstützung** für Texte und Bilder. Bezahlt wird monatlich per Ab
 - **Workspaces (Mandanten):** Ein Nutzer kann mehrere Workspaces besitzen
   (z. B. eine Agentur pro Kunde einen). Abrechnung pro Workspace.
 - **Unbegrenzte Social Accounts:** Instagram, Facebook, TikTok, LinkedIn,
-  YouTube, X (Twitter), Pinterest. Anbindung per OAuth über die offiziellen APIs.
+  YouTube, X (Twitter), Pinterest. Anbindung per OAuth über die offiziellen APIs —
+  auf **zwei Wegen** (wichtig für Agenturen):
+  1. **Selbst einloggen:** Der Nutzer meldet sich mit seinem eigenen Plattform-Konto
+     an und sieht alle Seiten/Profile, die er verwaltet (z. B. Kunden-Seiten über
+     Meta Business Manager Partner-Zugriff). Häkchen setzen → verbunden.
+  2. **Verbindungslink an den Kunden senden:** Das Tool erzeugt einen sicheren,
+     zeitlich begrenzten Einladungslink. Der Kunde öffnet ihn auf seinem Gerät,
+     loggt sich beim offiziellen Plattform-Login ein und bestätigt — der Account
+     landet automatisch im richtigen Workspace. **Kein Passwort wechselt je den
+     Besitzer.** (Tabelle `ConnectionInvite` im Datenmodell: Einmal-Token,
+     Ablaufdatum, Status pending/accepted/revoked.)
 - **Planungskalender:** Monats- und Wochenansicht, Drag & Drop, Farbcodierung
   pro Plattform, beliebig weit in die Zukunft planbar.
 - **Post-Composer:** Ein Entwurf → mehrere Plattformen gleichzeitig, mit

@@ -7,7 +7,9 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import {
   AiMode,
+  ConnectionInvite,
   CreditEntry,
+  Platform,
   PlanTier,
   Post,
   SocialAccount,
@@ -21,12 +23,17 @@ import {
 interface Store {
   accounts: SocialAccount[];
   posts: Post[];
+  invites: ConnectionInvite[];
   plan: PlanTier;
   aiMode: AiMode;
   credits: number;
   creditLog: CreditEntry[];
   addAccount: (a: Omit<SocialAccount, "id">) => void;
   removeAccount: (id: string) => void;
+  createInvite: (platform: Platform, clientName: string) => void;
+  revokeInvite: (id: string) => void;
+  /** Demo: simuliert, dass der Kunde den Link geöffnet und bestätigt hat */
+  acceptInvite: (id: string) => void;
   savePost: (p: Omit<Post, "id"> & { id?: string }) => void;
   deletePost: (id: string) => void;
   setPlan: (p: PlanTier) => void;
@@ -52,6 +59,16 @@ function today(): string {
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [accounts, setAccounts] = useState<SocialAccount[]>(DEMO_ACCOUNTS);
   const [posts, setPosts] = useState<Post[]>(() => buildDemoPosts());
+  const [invites, setInvites] = useState<ConnectionInvite[]>([
+    {
+      id: "inv-demo-1",
+      platform: "instagram",
+      clientName: "Bäckerei Berger",
+      token: "k3x9mq2v",
+      status: "pending",
+      createdAt: "02.07.2026",
+    },
+  ]);
   const [plan, setPlan] = useState<PlanTier>("pro");
   const [aiMode, setAiMode] = useState<AiMode>("credits");
   const [credits, setCredits] = useState(480);
@@ -70,6 +87,42 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         accountIds: p.accountIds.filter((aid) => aid !== id),
       }))
     );
+  }, []);
+
+  const createInvite = useCallback((platform: Platform, clientName: string) => {
+    setInvites((prev) => [
+      {
+        id: genId("inv"),
+        platform,
+        clientName,
+        token: Math.random().toString(36).slice(2, 10),
+        status: "pending" as const,
+        createdAt: today(),
+      },
+      ...prev,
+    ]);
+  }, []);
+
+  const revokeInvite = useCallback((id: string) => {
+    setInvites((prev) => prev.filter((i) => i.id !== id));
+  }, []);
+
+  const acceptInvite = useCallback((id: string) => {
+    setInvites((prev) => {
+      const inv = prev.find((i) => i.id === id);
+      if (!inv || inv.status !== "pending") return prev;
+      // In Produktion passiert das im OAuth-Callback des Kunden; hier simuliert
+      setAccounts((accs) => [
+        ...accs,
+        {
+          id: genId("acc"),
+          platform: inv.platform,
+          displayName: inv.clientName,
+          handle: "@" + inv.clientName.toLowerCase().replace(/[^a-zä-ü0-9]+/gi, ""),
+        },
+      ]);
+      return prev.map((i) => (i.id === id ? { ...i, status: "accepted" as const } : i));
+    });
   }, []);
 
   const savePost = useCallback(
@@ -119,12 +172,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     () => ({
       accounts,
       posts,
+      invites,
       plan,
       aiMode,
       credits,
       creditLog,
       addAccount,
       removeAccount,
+      createInvite,
+      revokeInvite,
+      acceptInvite,
       savePost,
       deletePost,
       setPlan,
@@ -135,12 +192,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [
       accounts,
       posts,
+      invites,
       plan,
       aiMode,
       credits,
       creditLog,
       addAccount,
       removeAccount,
+      createInvite,
+      revokeInvite,
+      acceptInvite,
       savePost,
       deletePost,
       buyCredits,

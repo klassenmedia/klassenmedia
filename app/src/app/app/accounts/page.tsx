@@ -5,20 +5,79 @@ import { useStore } from "@/lib/store";
 import { Button, inputCls, Modal, PlatformChip } from "@/components/ui";
 import { Platform, PLATFORMS } from "@/lib/types";
 
+type ConnectMode = "choose" | "self" | "invite" | "invite-done";
+
 export default function AccountsPage() {
-  const { accounts, addAccount, removeAccount, posts } = useStore();
-  const [adding, setAdding] = useState(false);
+  const {
+    accounts,
+    posts,
+    invites,
+    addAccount,
+    removeAccount,
+    createInvite,
+    revokeInvite,
+    acceptInvite,
+  } = useStore();
+
+  const [mode, setMode] = useState<ConnectMode | null>(null);
   const [platform, setPlatform] = useState<Platform>("instagram");
   const [displayName, setDisplayName] = useState("");
   const [handle, setHandle] = useState("");
+  const [clientName, setClientName] = useState("");
+  const [copied, setCopied] = useState<string | null>(null);
 
-  function submit() {
-    if (!displayName.trim() || !handle.trim()) return;
-    addAccount({ platform, displayName: displayName.trim(), handle: handle.trim() });
-    setAdding(false);
+  const pending = invites.filter((i) => i.status === "pending");
+
+  function openDialog() {
+    setPlatform("instagram");
     setDisplayName("");
     setHandle("");
+    setClientName("");
+    setMode("choose");
   }
+
+  function submitSelf() {
+    if (!displayName.trim() || !handle.trim()) return;
+    addAccount({ platform, displayName: displayName.trim(), handle: handle.trim() });
+    setMode(null);
+  }
+
+  function submitInvite() {
+    if (!clientName.trim()) return;
+    createInvite(platform, clientName.trim());
+    setMode("invite-done");
+  }
+
+  function copyLink(token: string) {
+    const link = `https://planbar.app/connect/${token}`;
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(link).catch(() => {});
+    }
+    setCopied(token);
+    setTimeout(() => setCopied(null), 2000);
+  }
+
+  const platformPicker = (
+    <div>
+      <label className="mb-1.5 block text-sm font-medium">Plattform</label>
+      <div className="flex flex-wrap gap-2">
+        {(Object.keys(PLATFORMS) as Platform[]).map((p) => (
+          <button
+            key={p}
+            onClick={() => setPlatform(p)}
+            className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-sm transition ${
+              platform === p
+                ? "border-accent bg-accent-soft"
+                : "border-line text-muted hover:border-accent/40"
+            }`}
+          >
+            <PlatformChip platform={p} size={18} />
+            {PLATFORMS[p].label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -29,7 +88,7 @@ export default function AccountsPage() {
             Verbinde beliebig viele Profile — <span className="text-accent">ohne Limit</span>, in jedem Tarif.
           </p>
         </div>
-        <Button onClick={() => setAdding(true)}>+ Account verbinden</Button>
+        <Button onClick={openDialog}>+ Account verbinden</Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -64,7 +123,7 @@ export default function AccountsPage() {
         })}
 
         <button
-          onClick={() => setAdding(true)}
+          onClick={openDialog}
           className="flex min-h-44 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line text-muted transition hover:border-accent hover:text-accent"
         >
           <span className="text-2xl">+</span>
@@ -72,35 +131,85 @@ export default function AccountsPage() {
         </button>
       </div>
 
+      {pending.length > 0 && (
+        <>
+          <h2 className="mt-10 mb-3 text-sm font-semibold uppercase tracking-wider text-muted">
+            Ausstehende Verbindungslinks
+          </h2>
+          <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+            {pending.map((inv, i) => (
+              <div
+                key={inv.id}
+                className={`flex flex-wrap items-center gap-3 p-4 ${i > 0 ? "border-t border-line" : ""}`}
+              >
+                <PlatformChip platform={inv.platform} size={28} />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium">{inv.clientName}</div>
+                  <div className="truncate font-mono text-xs text-muted">
+                    planbar.app/connect/{inv.token} · erstellt {inv.createdAt}
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button variant="ghost" className="!px-3 !py-1.5 text-xs" onClick={() => copyLink(inv.token)}>
+                    {copied === inv.token ? "✓ Kopiert" : "Link kopieren"}
+                  </Button>
+                  <Button variant="ghost" className="!px-3 !py-1.5 text-xs" onClick={() => acceptInvite(inv.id)}>
+                    Demo: Kunde bestätigt
+                  </Button>
+                  <button
+                    onClick={() => revokeInvite(inv.id)}
+                    aria-label="Einladung zurückziehen"
+                    className="rounded-lg px-2 py-1 text-sm text-muted transition hover:bg-danger/15 hover:text-danger"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       <div className="mt-8 rounded-2xl border border-line bg-surface p-5 text-sm text-muted">
-        <strong className="text-foreground">Hinweis (Prototyp):</strong> Im fertigen Produkt
-        läuft die Verbindung über die offiziellen OAuth-Flows der Plattformen (Meta, TikTok,
-        LinkedIn, …). Die Zugangs-Tokens werden verschlüsselt gespeichert — Details in
-        KONZEPT.md, Abschnitt 6.2.
+        <strong className="text-foreground">Hinweis (Prototyp):</strong> Im fertigen Produkt läuft
+        „Selbst einloggen“ über die offiziellen OAuth-Flows der Plattformen; der Verbindungslink
+        führt den Kunden auf eine Freigabe-Seite mit demselben OAuth-Login — Passwörter werden nie
+        geteilt. Details in KONZEPT.md, Abschnitt 3.1 und 6.2.
       </div>
 
-      {adding && (
-        <Modal title="Account verbinden" onClose={() => setAdding(false)}>
+      {mode === "choose" && (
+        <Modal title="Account verbinden" onClose={() => setMode(null)} wide>
+          <div className="grid gap-4 md:grid-cols-2">
+            <button
+              onClick={() => setMode("self")}
+              className="rounded-2xl border border-line bg-surface-2 p-5 text-left transition hover:border-accent"
+            >
+              <div className="text-2xl">🔑</div>
+              <h3 className="mt-3 font-semibold">Selbst einloggen</h3>
+              <p className="mt-1.5 text-sm text-muted">
+                Du hast Zugriff auf das Profil (eigenes Konto oder Partner-Zugriff, z. B. via Meta
+                Business Manager)? Dann melde dich direkt an.
+              </p>
+            </button>
+            <button
+              onClick={() => setMode("invite")}
+              className="rounded-2xl border border-line bg-surface-2 p-5 text-left transition hover:border-accent"
+            >
+              <div className="text-2xl">🔗</div>
+              <h3 className="mt-3 font-semibold">Link an Kunden senden</h3>
+              <p className="mt-1.5 text-sm text-muted">
+                Dein Kunde gibt den Account selbst frei — er öffnet den Link, loggt sich bei der
+                Plattform ein, fertig. Kein Passwort-Austausch.
+              </p>
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {mode === "self" && (
+        <Modal title="Selbst einloggen" onClose={() => setMode(null)}>
           <div className="flex flex-col gap-4">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Plattform</label>
-              <div className="flex flex-wrap gap-2">
-                {(Object.keys(PLATFORMS) as Platform[]).map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPlatform(p)}
-                    className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-sm transition ${
-                      platform === p
-                        ? "border-accent bg-accent-soft"
-                        : "border-line text-muted hover:border-accent/40"
-                    }`}
-                  >
-                    <PlatformChip platform={p} size={18} />
-                    {PLATFORMS[p].label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {platformPicker}
             <div>
               <label className="mb-1.5 block text-sm font-medium">Anzeigename</label>
               <input
@@ -121,15 +230,77 @@ export default function AccountsPage() {
               />
             </div>
             <p className="text-xs text-muted">
-              Demo-Modus: Der echte OAuth-Login der Plattform öffnet sich hier später.
+              Demo-Modus: Hier öffnet sich später der echte OAuth-Login der Plattform, danach
+              wählst du aus deinen verwalteten Seiten/Profilen aus.
             </p>
             <div className="flex justify-end gap-3 border-t border-line pt-4">
-              <Button variant="ghost" onClick={() => setAdding(false)}>
-                Abbrechen
+              <Button variant="ghost" onClick={() => setMode("choose")}>
+                Zurück
               </Button>
-              <Button onClick={submit} disabled={!displayName.trim() || !handle.trim()}>
+              <Button onClick={submitSelf} disabled={!displayName.trim() || !handle.trim()}>
                 Verbinden
               </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {mode === "invite" && (
+        <Modal title="Link an Kunden senden" onClose={() => setMode(null)}>
+          <div className="flex flex-col gap-4">
+            {platformPicker}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Name des Kunden</label>
+              <input
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                placeholder="z. B. Bäckerei Berger"
+                className={inputCls}
+                autoFocus
+              />
+            </div>
+            <p className="text-xs text-muted">
+              Der Link ist 7 Tage gültig und kann nur einmal verwendet werden. Dein Kunde loggt
+              sich damit beim offiziellen Login der Plattform ein und bestätigt den Zugriff.
+            </p>
+            <div className="flex justify-end gap-3 border-t border-line pt-4">
+              <Button variant="ghost" onClick={() => setMode("choose")}>
+                Zurück
+              </Button>
+              <Button onClick={submitInvite} disabled={!clientName.trim()}>
+                Link erstellen
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {mode === "invite-done" && (
+        <Modal title="Verbindungslink erstellt ✓" onClose={() => setMode(null)}>
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-muted">
+              Schick diesen Link an <strong className="text-foreground">{invites[0]?.clientName}</strong> —
+              per E-Mail, WhatsApp oder wie ihr sonst kommuniziert:
+            </p>
+            <div className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2.5">
+              <span className="min-w-0 flex-1 truncate font-mono text-sm">
+                planbar.app/connect/{invites[0]?.token}
+              </span>
+              <Button
+                variant="ghost"
+                className="!px-3 !py-1.5 shrink-0 text-xs"
+                onClick={() => invites[0] && copyLink(invites[0].token)}
+              >
+                {copied === invites[0]?.token ? "✓ Kopiert" : "Kopieren"}
+              </Button>
+            </div>
+            <p className="text-xs text-muted">
+              Du findest den Link jederzeit unter „Ausstehende Verbindungslinks“ — dort kannst du
+              ihn auch zurückziehen. Sobald dein Kunde bestätigt hat, erscheint der Account
+              automatisch in der Liste.
+            </p>
+            <div className="flex justify-end border-t border-line pt-4">
+              <Button onClick={() => setMode(null)}>Fertig</Button>
             </div>
           </div>
         </Modal>
