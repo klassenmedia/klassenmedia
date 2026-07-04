@@ -17,35 +17,58 @@ interface GeneratedImage {
 }
 
 export default function AiPage() {
-  const { aiMode, setAiMode, credits, creditLog, buyCredits, spendCredits } = useStore();
+  const {
+    aiMode,
+    setAiMode,
+    credits,
+    creditLog,
+    buyCredits,
+    spendCredits,
+    saveByoKeys,
+    hasByoKeys,
+  } = useStore();
   const [anthropicKey, setAnthropicKey] = useState("");
   const [openaiKey, setOpenaiKey] = useState("");
-  const [keySaved, setKeySaved] = useState(false);
+  const [keySaving, setKeySaving] = useState(false);
   const [imgPrompt, setImgPrompt] = useState("");
   const [images, setImages] = useState<GeneratedImage[]>([]);
   const [imgHint, setImgHint] = useState<string | null>(null);
 
-  function generateImage() {
-    if (!imgPrompt.trim()) return;
-    if (aiMode === "credits") {
-      const ok = spendCredits(6, "Bild generiert (1024×1024)");
-      if (!ok) {
-        setImgHint("Nicht genug Credits — bitte Paket kaufen oder auf eigenen API-Key umstellen.");
-        return;
-      }
-      setImgHint("6 Credits verbraucht (Demo-Platzhalter statt echtem Bild)");
-    } else {
-      setImgHint("Über deinen eigenen API-Key generiert (Demo-Platzhalter) · keine Credits verbraucht");
+  async function generateImage() {
+    const prompt = imgPrompt.trim();
+    if (!prompt) return;
+    const ok = await spendCredits("image", "Bild generiert (1024×1024)");
+    if (!ok) {
+      setImgHint("Nicht genug Credits — bitte Paket kaufen oder auf eigenen API-Key umstellen.");
+      return;
     }
+    setImgHint(
+      aiMode === "credits"
+        ? "6 Credits verbraucht (Platzhalter — echte Bild-KI folgt in Phase 4)"
+        : "Über deinen eigenen API-Key (Platzhalter — echte Bild-KI folgt in Phase 4)"
+    );
     setImages((prev) => [
       {
         id: prev.length + 1,
-        prompt: imgPrompt.trim(),
-        hue: (prev.length * 67 + imgPrompt.length * 31) % 360,
+        prompt,
+        hue: (prev.length * 67 + prompt.length * 31) % 360,
       },
       ...prev,
     ]);
     setImgPrompt("");
+  }
+
+  async function submitKeys() {
+    setKeySaving(true);
+    const ok = await saveByoKeys({
+      anthropicKey: anthropicKey.trim() || undefined,
+      openaiKey: openaiKey.trim() || undefined,
+    });
+    setKeySaving(false);
+    if (ok) {
+      setAnthropicKey("");
+      setOpenaiKey("");
+    }
   }
 
   return (
@@ -105,8 +128,8 @@ export default function AiPage() {
             Du zahlst die KI-Nutzung direkt beim Anbieter (Anthropic, OpenAI, …) —
             bei uns fallen dafür keine Credits an. Volle Kostenkontrolle.
           </p>
-          <div className="mt-4 text-sm font-medium text-success">
-            {keySaved ? "✓ Key hinterlegt" : "Noch kein Key hinterlegt"}
+          <div className={`mt-4 text-sm font-medium ${hasByoKeys ? "text-success" : "text-muted"}`}>
+            {hasByoKeys ? "✓ Key hinterlegt" : "Noch kein Key hinterlegt"}
           </div>
         </button>
       </div>
@@ -142,12 +165,14 @@ export default function AiPage() {
           </div>
           <div className="mt-4 flex items-center gap-3">
             <Button
-              onClick={() => setKeySaved(true)}
-              disabled={!anthropicKey.trim() && !openaiKey.trim()}
+              onClick={submitKeys}
+              disabled={keySaving || (!anthropicKey.trim() && !openaiKey.trim())}
             >
-              Keys speichern
+              {keySaving ? "Speichert …" : "Keys speichern"}
             </Button>
-            {keySaved && <span className="text-sm text-success">Gespeichert (Demo)</span>}
+            {hasByoKeys && (
+              <span className="text-sm text-success">✓ Verschlüsselt gespeichert (AES-256)</span>
+            )}
           </div>
         </div>
       )}
@@ -181,9 +206,7 @@ export default function AiPage() {
                 <Button
                   className="mt-4 w-full"
                   variant={pkg.popular ? "primary" : "ghost"}
-                  onClick={() =>
-                    buyCredits(pkg.credits, `Credit-Paket ${pkg.id} gekauft`)
-                  }
+                  onClick={() => buyCredits(pkg.id as "S" | "M" | "L")}
                 >
                   Kaufen (Demo)
                 </Button>

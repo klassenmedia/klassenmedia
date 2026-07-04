@@ -1,29 +1,51 @@
-# Planbar — Prototyp
+# Planbar — App (Phase 1)
 
-Klickbarer Prototyp des Social-Media-Planungstools (siehe `../KONZEPT.md` für das
-vollständige Produkt- und Architekturkonzept).
+Social-Media-Planungstool mit echter Datenbank, Login und Persistenz.
+Produktkonzept & Roadmap: `../KONZEPT.md`.
 
-## Starten
+## Lokal starten
+
+Voraussetzung: Node.js 20+. Keine weitere Installation nötig (SQLite ist dateibasiert).
 
 ```bash
 npm install
-npm run dev
+cp .env.example .env        # dann in .env ein eigenes APP_SECRET eintragen (openssl rand -hex 32)
+npm run db:migrate          # legt die lokale Datenbank an (prisma/dev.db)
+npm run db:seed             # optional: Demo-Daten
+npm run dev                 # oder: npm run dev -- -p 3001, falls Port 3000 belegt
 ```
 
-→ http://localhost:3000 (Landingpage) · http://localhost:3000/app (App-Demo)
+**Demo-Login** (nach `db:seed`): `demo@klassenmedia.de` / `demo1234` —
+oder unter `/register` ein eigenes Konto anlegen.
 
-## Was ist enthalten?
+## Was ist echt, was noch Demo?
 
-| Bereich | Route | Status |
-|---|---|---|
-| Landingpage mit Preisen & FAQ | `/` | Prototyp |
-| Dashboard | `/app` | Prototyp (Demo-Daten) |
-| Planungskalender + Post-Composer | `/app/planner` | Prototyp, voll klickbar |
-| Account-Verwaltung (unbegrenzt) | `/app/accounts` | Prototyp |
-| KI-Studio (Credits / BYO-Key, Bildgenerierung) | `/app/ai` | Prototyp |
-| Abo & Zahlung (Stripe-Integrationspunkte) | `/app/billing` | Prototyp |
-| Produktions-Datenmodell | `prisma/schema.prisma` | Referenz für Phase 1 |
+| Bereich | Status |
+|---|---|
+| Login/Registrierung, Sessions | ✅ echt (bcrypt, serverseitige Sessions, httpOnly-Cookie) |
+| Posts, Formate, Kalender | ✅ echt (SQLite, überlebt Neustart) |
+| Bild-Upload im Composer | ✅ echt (lokales Dateisystem, `public/uploads/`) |
+| Accounts & Verbindungslinks | ✅ persistiert — echte OAuth-Anbindung folgt in Phase 2 |
+| Inbox (Kommentare liken/antworten/löschen) | ✅ persistiert — Sync mit Plattformen folgt in Phase 2 |
+| KI-Credits (Kauf/Verbrauch, serverseitige Preise) | ✅ persistiert — Stripe folgt in Phase 3, echte KI in Phase 4 |
+| BYO-API-Keys | ✅ verschlüsselt gespeichert (AES-256-GCM) |
+| Veröffentlichen auf Plattformen | 🔲 Phase 2 |
 
-Der Prototyp läuft komplett ohne externe Dienste — alle Daten liegen im Speicher
-(`src/lib/store.tsx`) und werden beim Neuladen zurückgesetzt. Die Roadmap zu echter
-Persistenz, Publishing und Stripe steht in `../KONZEPT.md`, Abschnitt 8.
+## Sicherheit (Phase 1)
+
+- Passwörter: bcrypt (Kostenfaktor 12), identische Fehlermeldung bei falscher
+  E-Mail/Passwort (kein E-Mail-Enumerieren)
+- Sessions: 32-Byte-Zufallstoken im httpOnly/SameSite-Cookie, in der DB nur der
+  SHA-256-Hash, 30 Tage Laufzeit
+- Autorisierung: jede Server Action lädt den Workspace aus der Session —
+  fremde IDs aus dem Client werden immer gegen `workspaceId` geprüft
+- Preise/Kosten für Credits stehen nur serverseitig
+- BYO-API-Keys: AES-256-GCM mit Schlüssel aus `APP_SECRET` (ENV, nicht im Repo)
+- Uploads: MIME-Whitelist, 8-MB-Limit, zufällige Dateinamen
+
+## Cloud-Deploy (später)
+
+1. Postgres statt SQLite: in `prisma/schema.prisma` Provider umstellen,
+   String-Status-Felder zu Enums machen, `DATABASE_URL` setzen
+2. Uploads auf S3/R2 umstellen (`src/app/api/upload/route.ts`)
+3. `APP_SECRET` als Server-Secret setzen, HTTPS erzwingen (Cookie `secure` greift automatisch)

@@ -1,293 +1,187 @@
-// Ziel-Datenmodell für die Produktionsphase (Phase 1+ laut KONZEPT.md).
-// Der Prototyp läuft noch mit Demo-Daten (src/lib/demo-data.ts) — dieses Schema
-// definiert die spätere PostgreSQL-Struktur und dient als Referenz für alle
-// Backend-Entscheidungen (Mandantenfähigkeit, Billing, Credits, Publishing).
+// Phase-1-Schema: läuft lokal mit SQLite (keine Installation nötig).
+// Für den Cloud-Umzug wird nur provider = "postgresql" gesetzt und die
+// String-Status-Felder werden wieder zu echten Enums (SQLite kann keine Enums).
+// Gültige Werte stehen als Kommentar an jedem Feld — die Validierung passiert
+// zusätzlich in den Server Actions (zod).
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-// ── Nutzer & Mandanten ────────────────────────────────────────────────
+// ── Nutzer, Sessions & Mandanten ──────────────────────────────────────
 
 model User {
-  id            String            @id @default(cuid())
-  email         String            @unique
-  name          String?
-  passwordHash  String? // null bei reinem OAuth-Login
-  createdAt     DateTime          @default(now())
-  memberships   WorkspaceMember[]
+  id           String            @id @default(cuid())
+  email        String            @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime          @default(now())
+  memberships  WorkspaceMember[]
+  sessions     Session[]
+}
+
+// Serverseitige Sessions: im Cookie liegt nur ein Zufallstoken,
+// in der DB nur dessen SHA-256-Hash (Diebstahl der DB ≠ gültige Sessions)
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Workspace {
   id                 String              @id @default(cuid())
   name               String
-  slug               String              @unique
   createdAt          DateTime            @default(now())
   members            WorkspaceMember[]
   socialAccounts     SocialAccount[]
   connectionInvites  ConnectionInvite[]
   posts              Post[]
-  campaigns          Campaign[]
   mediaAssets        MediaAsset[]
-  subscription       Subscription?
-  aiSettings         AiSettings?
-  creditBalance      Int                 @default(0) // aktueller Credit-Stand (denormalisiert)
+  aiMode             String              @default("credits") // credits | byo
+  // BYO-Keys werden NIE im Klartext gespeichert (AES-256-GCM, Schlüssel in ENV)
+  anthropicKeyEnc    String?
+  openaiKeyEnc       String?
+  plan               String              @default("starter") // starter | pro | agency
+  creditBalance      Int                 @default(0)
   creditTransactions CreditTransaction[]
 }
 
-enum WorkspaceRole {
-  OWNER
-  ADMIN
-  EDITOR // darf erstellen/planen, nicht freigeben
-  VIEWER
-}
-
 model WorkspaceMember {
-  id          String        @id @default(cuid())
-  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   workspaceId String
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
-  role        WorkspaceRole @default(EDITOR)
+  role        String    @default("owner") // owner | admin | editor | viewer
 
   @@unique([workspaceId, userId])
 }
 
-// ── Social Accounts (unbegrenzt pro Workspace) ────────────────────────
-
-enum Platform {
-  INSTAGRAM
-  FACEBOOK
-  TIKTOK
-  LINKEDIN
-  YOUTUBE
-  X
-  PINTEREST
-}
+// ── Social Accounts & Kunden-Verbindungslinks ─────────────────────────
 
 model SocialAccount {
-  id                String       @id @default(cuid())
-  workspace         Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  workspaceId       String
-  platform          Platform
-  // Anzeigename + Handle vom Provider
-  displayName       String
-  handle            String
-  avatarUrl         String?
-  // OAuth — Tokens IMMER verschlüsselt (AES-256-GCM), nie im Klartext
-  providerAccountId String // ID beim Provider
-  accessTokenEnc    String
-  refreshTokenEnc   String?
-  tokenExpiresAt    DateTime?
-  status            String       @default("connected") // connected | token_expired | revoked
-  connectedAt       DateTime     @default(now())
-  postTargets       PostTarget[]
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  platform    String // instagram | facebook | tiktok | linkedin | youtube | x | pinterest
+  displayName String
+  handle      String
+  // OAuth-Tokens (Phase 2): verschlüsselt, nie Klartext
+  accessTokenEnc  String?
+  refreshTokenEnc String?
+  status      String    @default("connected") // connected | token_expired | revoked
+  connectedAt DateTime  @default(now())
+  postLinks   PostAccount[]
 
-  @@unique([workspaceId, platform, providerAccountId])
   @@index([workspaceId])
 }
 
-enum InviteStatus {
-  PENDING
-  ACCEPTED
-  EXPIRED
-  REVOKED
-}
-
-// Verbindungslink für Kunden-Onboarding: Agentur erzeugt Link, Kunde öffnet ihn,
-// durchläuft den OAuth-Flow der Plattform und der Account landet im Workspace —
-// ohne dass Passwörter geteilt werden.
 model ConnectionInvite {
-  id              String       @id @default(cuid())
-  workspace       Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  workspaceId     String
-  // Einmal-Token für die URL (/connect/<token>), kryptographisch zufällig
-  token           String       @unique
-  // optional vorgegeben; null = Kunde wählt die Plattform selbst
-  platform        Platform?
-  clientName      String? // Anzeige "Einladung für Bäckerei Berger"
-  status          InviteStatus @default(PENDING)
-  expiresAt       DateTime // z. B. 7 Tage gültig
-  createdAt       DateTime     @default(now())
-  acceptedAt      DateTime?
-  // nach Annahme: der daraus entstandene Account
-  socialAccountId String?
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  token       String    @unique
+  platform    String
+  clientName  String
+  status      String    @default("pending") // pending | accepted | expired | revoked
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  acceptedAt  DateTime?
 
   @@index([workspaceId, status])
 }
 
 // ── Inhalte & Planung ─────────────────────────────────────────────────
 
-enum PostFormat {
-  TEXT
-  IMAGE
-  VIDEO    // Video, Reel, Short
-  CAROUSEL // bis zu 10 Medien
-  STORY    // 24h, 9:16
-}
-
-enum PostStatus {
-  DRAFT       // Entwurf
-  SCHEDULED   // geplant
-  NEEDS_APPROVAL
-  APPROVED
-  PUBLISHING  // Job läuft gerade
-  PUBLISHED
-  FAILED
-}
-
-model Campaign {
-  id          String    @id @default(cuid())
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  workspaceId String
-  name        String
-  color       String // Hex, Farbcodierung im Kalender
-  startsAt    DateTime?
-  endsAt      DateTime?
-  posts       Post[]
-}
-
 model Post {
-  id          String       @id @default(cuid())
-  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id          String        @id @default(cuid())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   workspaceId String
-  campaign    Campaign?    @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  campaignId  String?
-  // Basistext; plattformspezifische Abweichungen liegen am PostTarget
   body        String
-  format      PostFormat   @default(IMAGE)
-  scheduledAt DateTime? // null = Entwurf ohne Termin
-  timezone    String       @default("Europe/Berlin")
-  status      PostStatus   @default(DRAFT)
-  // Serien: Posts können aus einer Wiederholungsregel erzeugt werden
-  recurrence  Recurrence?  @relation(fields: [recurrenceId], references: [id], onDelete: SetNull)
-  recurrenceId String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  targets     PostTarget[]
+  format      String        @default("image") // text | image | video | carousel | story
+  scheduledAt DateTime
+  status      String        @default("scheduled") // draft | scheduled | published | failed
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  accounts    PostAccount[]
   media       MediaAsset[]
+  comments    Comment[]
 
   @@index([workspaceId, scheduledAt])
-  @@index([status, scheduledAt]) // Scheduler-Query: fällige Posts
+  @@index([status, scheduledAt]) // Scheduler-Query (Phase 2): fällige Posts
 }
 
-// Verknüpfung Post ↔ SocialAccount, inkl. plattformspezifischer Überschreibung
-model PostTarget {
-  id              String        @id @default(cuid())
-  post            Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId          String
-  account         SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  accountId       String
-  bodyOverride    String? // abweichender Text für diese Plattform
-  publishedPostId String? // ID des Posts beim Provider nach Erfolg
-  publishedAt     DateTime?
-  error           String? // letzte Fehlermeldung des Publishers
-  attemptCount    Int           @default(0)
+// Verknüpfung Post ↔ SocialAccount (Phase 2 ergänzt bodyOverride, publishedPostId, error)
+model PostAccount {
+  id        String        @id @default(cuid())
+  post      Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+  account   SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId String
 
   @@unique([postId, accountId])
-}
-
-// Wiederholungsregeln für Serienplanung ("jeden Di 09:00, 12 Monate")
-model Recurrence {
-  id        String   @id @default(cuid())
-  rrule     String // iCal RRULE-String
-  timezone  String   @default("Europe/Berlin")
-  createdAt DateTime @default(now())
-  posts     Post[]
 }
 
 model MediaAsset {
   id          String    @id @default(cuid())
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   workspaceId String
-  url         String // S3/R2-URL
-  kind        String // image | video
-  width       Int?
-  height      Int?
-  // Herkunft: Upload oder KI-generiert (inkl. Prompt für Nachvollziehbarkeit)
-  source      String    @default("upload") // upload | ai
-  aiPrompt    String?
+  // echte Uploads: /uploads/<datei>; Demo-/KI-Platzhalter: placeholder:<hue>
+  url         String
+  kind        String    @default("image") // image | video
+  source      String    @default("upload") // upload | ai | placeholder
   createdAt   DateTime  @default(now())
   post        Post?     @relation(fields: [postId], references: [id], onDelete: SetNull)
   postId      String?
+  sortOrder   Int       @default(0)
 
   @@index([workspaceId])
 }
 
-// ── Billing (Stripe) ──────────────────────────────────────────────────
+// ── Kommentare (Inbox) ────────────────────────────────────────────────
+// Phase 1: lokale Verwaltung mit Demo-Daten. Phase 2 synchronisiert echte
+// Kommentare über die Plattform-APIs (Meta/TikTok/LinkedIn) — liken,
+// antworten und löschen laufen dann über dieselben Actions.
 
-enum PlanTier {
-  STARTER
-  PRO
-  AGENCY
-}
-
-enum SubscriptionStatus {
-  TRIALING
-  ACTIVE
-  PAST_DUE
-  CANCELED
-}
-
-model Subscription {
-  id                   String             @id @default(cuid())
-  workspace            Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  workspaceId          String             @unique
-  tier                 PlanTier           @default(STARTER)
-  status               SubscriptionStatus @default(TRIALING)
-  stripeCustomerId     String             @unique
-  stripeSubscriptionId String?            @unique
-  currentPeriodEnd     DateTime?
-  cancelAtPeriodEnd    Boolean            @default(false)
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-}
-
-// ── KI: BYO-Key oder Plattform-Credits ────────────────────────────────
-
-enum AiMode {
-  PLATFORM_CREDITS // wir rechnen ab, mit Marge
-  BYO_KEY          // Kunde nutzt eigenen API-Key
-}
-
-model AiSettings {
-  id             String    @id @default(cuid())
-  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  workspaceId    String    @unique
-  mode           AiMode    @default(PLATFORM_CREDITS)
-  // BYO-Keys verschlüsselt (AES-256-GCM); Provider getrennt speicherbar
-  anthropicKeyEnc String?
-  openaiKeyEnc    String?
-  imageKeyEnc     String? // z. B. Fal/Replicate für Bilder
-  updatedAt      DateTime  @updatedAt
-}
-
-enum CreditTxType {
-  PURCHASE       // Paketkauf via Stripe
-  PLAN_GRANT     // monatliches Kontingent aus dem Abo
-  USAGE_TEXT
-  USAGE_IMAGE
-  REFUND
-  ADJUSTMENT     // manueller Support-Eingriff
-}
-
-// Jede Credit-Bewegung wird geloggt (Audit + UI-Anzeige + Margen-Reporting)
-model CreditTransaction {
-  id          String       @id @default(cuid())
-  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+model Comment {
+  id          String    @id @default(cuid())
   workspaceId String
-  type        CreditTxType
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId      String
+  author      String // Anzeigename des Kommentators
+  authorHandle String?
+  text        String
+  likedByUs   Boolean   @default(false)
+  isOwnReply  Boolean   @default(false) // von uns über das Tool geantwortet
+  parent      Comment?  @relation("Replies", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId    String?
+  replies     Comment[] @relation("Replies")
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@index([postId])
+}
+
+// ── Credits ───────────────────────────────────────────────────────────
+
+model CreditTransaction {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  type        String // purchase | plan_grant | usage_text | usage_image | adjustment
   amount      Int // positiv = Gutschrift, negativ = Verbrauch
-  // bei USAGE_*: tatsächliche API-Kosten in Mikro-Euro für Margen-Reporting
-  providerCostMicros Int?
-  description String?
-  stripePaymentIntentId String?
-  createdAt   DateTime     @default(now())
+  description String
+  createdAt   DateTime  @default(now())
 
   @@index([workspaceId, createdAt])
 }

@@ -1,9 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { Button, FormatIcon, inputCls, Modal, PlatformChip, StatusBadge } from "@/components/ui";
-import { FORMATS, PLATFORMS, Post, PostFormat, PostStatus, toDateKey } from "@/lib/types";
+import {
+  FORMATS,
+  MediaItem,
+  mediaBackground,
+  PLATFORMS,
+  Post,
+  PostFormat,
+  PostStatus,
+  toDateKey,
+} from "@/lib/types";
 import { AI_CAPTION_IDEAS } from "@/lib/demo-data";
 
 const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
@@ -20,7 +29,7 @@ interface ComposerState {
   accountIds: string[];
   status: PostStatus;
   format: PostFormat;
-  media: number[];
+  media: MediaItem[];
 }
 
 export default function PlannerPage() {
@@ -31,6 +40,9 @@ export default function PlannerPage() {
   const [month, setMonth] = useState(now.getMonth()); // 0-basiert
   const [composer, setComposer] = useState<ComposerState | null>(null);
   const [aiHint, setAiHint] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const todayKey = toDateKey(new Date());
 
@@ -97,11 +109,29 @@ export default function PlannerPage() {
     });
   }
 
-  function addMedia() {
-    setComposer((c) => {
-      if (!c || c.media.length >= FORMATS[c.format].maxMedia) return c;
-      return { ...c, media: [...c.media, (c.media.length * 73 + c.body.length * 31 + 40) % 360] };
-    });
+  async function uploadFiles(files: FileList | null) {
+    if (!files || !composer) return;
+    setUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", body: form });
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          setAiHint(body?.error ?? "Upload fehlgeschlagen");
+          continue;
+        }
+        const asset: { id: string; url: string } = await res.json();
+        setComposer((c) => {
+          if (!c || c.media.length >= FORMATS[c.format].maxMedia) return c;
+          return { ...c, media: [...c.media, { id: asset.id, url: asset.url }] };
+        });
+      }
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   }
 
   function removeMedia(index: number) {
@@ -110,35 +140,37 @@ export default function PlannerPage() {
     );
   }
 
-  function suggestCaption() {
+  async function suggestCaption() {
     if (!composer) return;
-    if (aiMode === "credits") {
-      const ok = spendCredits(1, "Caption-Vorschlag (Planer)");
-      if (!ok) {
-        setAiHint("Nicht genug Credits — Kontingent im KI-Studio aufladen oder eigenen API-Key hinterlegen.");
-        return;
-      }
-      setAiHint("1 Credit verbraucht · Vorschlag eingefügt (Demo)");
-    } else {
-      setAiHint("Über deinen eigenen API-Key generiert (Demo) · keine Credits verbraucht");
+    const ok = await spendCredits("caption", "Caption-Vorschlag (Planer)");
+    if (!ok) {
+      setAiHint("Nicht genug Credits — Kontingent im KI-Studio aufladen oder eigenen API-Key hinterlegen.");
+      return;
     }
+    setAiHint(
+      aiMode === "credits"
+        ? "1 Credit verbraucht · Vorschlag eingefügt (echte KI folgt in Phase 4)"
+        : "Über deinen eigenen API-Key (echte KI folgt in Phase 4) · keine Credits verbraucht"
+    );
     const idea = AI_CAPTION_IDEAS[Math.floor(Math.random() * AI_CAPTION_IDEAS.length)];
     setComposer((c) => (c ? { ...c, body: idea } : c));
   }
 
-  function submit() {
+  async function submit() {
     if (!composer || !composer.body.trim() || composer.accountIds.length === 0) return;
-    savePost({
+    setSaving(true);
+    const ok = await savePost({
       id: composer.id,
       body: composer.body.trim(),
       date: composer.date,
       time: composer.time,
       accountIds: composer.accountIds,
-      status: composer.status,
+      status: composer.status === "draft" ? "draft" : "scheduled",
       format: composer.format,
       media: composer.media,
     });
-    setComposer(null);
+    setSaving(false);
+    if (ok) setComposer(null);
   }
 
   return (
@@ -205,7 +237,7 @@ export default function PlannerPage() {
                     >
                       {day.getDate()}
                     </span>
-                    <span className="hidden text-xs text-accent group-hover:inline">+</span>
+                    <span className="hidden text-xs text-accent-fg group-hover:inline">+</span>
                   </div>
                   <div className="flex flex-col gap-1">
                     {dayPosts.slice(0, 3).map((post) => {
@@ -272,7 +304,7 @@ export default function PlannerPage() {
                 <label className="text-sm font-medium">Text</label>
                 <button
                   onClick={suggestCaption}
-                  className="rounded-lg bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent transition hover:brightness-125"
+                  className="rounded-lg bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent-fg transition hover:brightness-125"
                 >
                   ✨ KI-Vorschlag {aiMode === "credits" ? "(1 Credit)" : "(eigener Key)"}
                 </button>
@@ -387,15 +419,13 @@ export default function PlannerPage() {
                   Medien ({composer.media.length}/{FORMATS[composer.format].maxMedia})
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {composer.media.map((hue, i) => (
+                  {composer.media.map((item, i) => (
                     <div
-                      key={i}
+                      key={item.id ?? `ph-${i}`}
                       className={`group/media relative overflow-hidden rounded-xl border border-line ${
                         composer.format === "story" ? "h-24 w-14" : "h-16 w-16"
                       }`}
-                      style={{
-                        background: `linear-gradient(135deg, hsl(${hue} 55% 55%), hsl(${(hue + 60) % 360} 55% 35%))`,
-                      }}
+                      style={{ background: mediaBackground(item.url) }}
                     >
                       {composer.format === "video" && (
                         <span className="absolute inset-0 flex items-center justify-center text-white/90">
@@ -413,18 +443,28 @@ export default function PlannerPage() {
                   ))}
                   {composer.media.length < FORMATS[composer.format].maxMedia && (
                     <button
-                      onClick={addMedia}
-                      className={`flex items-center justify-center rounded-xl border border-dashed border-line text-lg text-muted transition hover:border-accent hover:text-accent ${
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className={`flex flex-col items-center justify-center gap-0.5 rounded-xl border border-dashed border-line text-muted transition hover:border-accent hover:text-accent-fg disabled:opacity-50 ${
                         composer.format === "story" ? "h-24 w-14" : "h-16 w-16"
                       }`}
                     >
-                      +
+                      <span className="text-lg leading-none">{uploading ? "…" : "+"}</span>
+                      <span className="text-[9px]">{uploading ? "lädt" : "Upload"}</span>
                     </button>
                   )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    multiple={composer.format === "carousel"}
+                    className="hidden"
+                    onChange={(e) => uploadFiles(e.target.files)}
+                  />
                 </div>
                 <p className="mt-1.5 text-xs text-muted">
-                  Demo-Platzhalter — Upload &amp; Medienbibliothek folgen in Phase 1, KI-Bilder
-                  kommen aus dem KI-Studio.
+                  Bilder werden lokal gespeichert (JPG/PNG/WebP/GIF, max. 8 MB). Videos und
+                  KI-Bilder direkt im Composer folgen in Phase 2/4.
                 </p>
               </div>
             )}
@@ -434,8 +474,8 @@ export default function PlannerPage() {
                 {composer.id && (
                   <Button
                     variant="danger"
-                    onClick={() => {
-                      deletePost(composer.id!);
+                    onClick={async () => {
+                      await deletePost(composer.id!);
                       setComposer(null);
                     }}
                   >
@@ -450,9 +490,9 @@ export default function PlannerPage() {
                 </Button>
                 <Button
                   onClick={submit}
-                  disabled={!composer.body.trim() || composer.accountIds.length === 0}
+                  disabled={saving || !composer.body.trim() || composer.accountIds.length === 0}
                 >
-                  {composer.id ? "Speichern" : "Planen"}
+                  {saving ? "Speichert …" : composer.id ? "Speichern" : "Planen"}
                 </Button>
               </div>
             </div>

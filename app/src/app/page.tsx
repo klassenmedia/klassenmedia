@@ -138,7 +138,7 @@ export default function LandingPage() {
           <h1 className="text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
             Social Media planen.
             <br />
-            <span className="text-accent">Ohne Account-Limits.</span>
+            <span className="text-accent-fg">Ohne Account-Limits.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted">
             Planbar ist das Planungstool für alle, die mehr als drei Profile betreuen:
@@ -177,12 +177,12 @@ export default function LandingPage() {
                     <div
                       className="mt-1 truncate rounded-md px-1.5 py-1 text-[9px]"
                       style={{
-                        background: ["#e1306c22", "#0a66c222", "#22d3ee22"][i % 3],
+                        background: ["#e1306c22", "#0a66c222", "#0891b222"][i % 3],
                       }}
                     >
                       <span
                         className="mr-1 inline-block h-1.5 w-1.5 rounded-full"
-                        style={{ background: ["#e1306c", "#0a66c2", "#22d3ee"][i % 3] }}
+                        style={{ background: ["#e1306c", "#0a66c2", "#0891b2"][i % 3] }}
                       />
                       {["Reel: Behind the Scenes", "Recruiting-Post", "Trend-Video"][i % 3]}
                     </div>
@@ -277,7 +277,7 @@ export default function LandingPage() {
               className="group rounded-2xl border border-line bg-surface p-5 open:border-accent/40"
             >
               <summary className="cursor-pointer list-none font-medium marker:hidden">
-                <span className="mr-2 inline-block text-accent transition group-open:rotate-90">›</span>
+                <span className="mr-2 inline-block text-accent-fg transition group-open:rotate-90">›</span>
                 {item.q}
               </summary>
               <p className="mt-3 pl-5 text-sm leading-relaxed text-muted">{item.a}</p>

@@ -69,7 +69,7 @@ export function PlatformChip({
 export function StatusBadge({ status }: { status: PostStatus }) {
   const styles: Record<PostStatus, string> = {
     draft: "bg-surface-2 text-muted",
-    scheduled: "bg-accent-soft text-accent",
+    scheduled: "bg-accent-soft text-accent-fg",
     published: "bg-success/15 text-success",
     failed: "bg-danger/15 text-danger",
   };

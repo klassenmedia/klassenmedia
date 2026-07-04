@@ -1,212 +1,134 @@
 "use client";
 
-// Zentraler In-Memory-Store des Prototyps (React Context).
-// In Phase 1 wird er durch Server Actions + Postgres ersetzt; die Action-
-// Signaturen hier entsprechen bewusst den späteren Service-Funktionen.
+// Client-Store der App: hält das vom Server geladene Workspace-Bundle und
+// ruft für jede Mutation eine Server Action auf. Die Actions geben das frische
+// Bundle zurück — eine Quelle der Wahrheit, kein Client-Drift.
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import {
   AiMode,
+  CommentItem,
   ConnectionInvite,
   CreditEntry,
+  MediaItem,
   Platform,
   PlanTier,
   Post,
+  PostFormat,
+  PostStatus,
   SocialAccount,
 } from "./types";
+import type { WorkspaceBundle } from "./data";
 import {
-  buildDemoPosts,
-  DEMO_ACCOUNTS,
-  DEMO_CREDIT_LOG,
-} from "./demo-data";
+  acceptInviteAction,
+  ActionResult,
+  addAccountAction,
+  buyCreditsAction,
+  createInviteAction,
+  deleteCommentAction,
+  deletePostAction,
+  removeAccountAction,
+  replyCommentAction,
+  revokeInviteAction,
+  savePostAction,
+  saveByoKeysAction,
+  setAiModeAction,
+  setPlanAction,
+  spendCreditsAction,
+  toggleCommentLikeAction,
+} from "./actions";
+
+export interface SavePostInput {
+  id?: string;
+  body: string;
+  date: string;
+  time: string;
+  accountIds: string[];
+  status: PostStatus;
+  format: PostFormat;
+  media: MediaItem[];
+}
 
 interface Store {
+  user: { name: string; email: string };
+  workspaceName: string;
   accounts: SocialAccount[];
   posts: Post[];
   invites: ConnectionInvite[];
+  comments: CommentItem[];
   plan: PlanTier;
   aiMode: AiMode;
+  hasByoKeys: boolean;
   credits: number;
   creditLog: CreditEntry[];
-  addAccount: (a: Omit<SocialAccount, "id">) => void;
-  removeAccount: (id: string) => void;
-  createInvite: (platform: Platform, clientName: string) => void;
-  revokeInvite: (id: string) => void;
-  /** Demo: simuliert, dass der Kunde den Link geöffnet und bestätigt hat */
-  acceptInvite: (id: string) => void;
-  savePost: (p: Omit<Post, "id"> & { id?: string }) => void;
-  deletePost: (id: string) => void;
-  setPlan: (p: PlanTier) => void;
-  setAiMode: (m: AiMode) => void;
-  buyCredits: (amount: number, label: string) => void;
-  spendCredits: (amount: number, label: string) => boolean;
+  error: string | null;
+  clearError: () => void;
+  savePost: (p: SavePostInput) => Promise<boolean>;
+  deletePost: (id: string) => Promise<void>;
+  addAccount: (a: { platform: Platform; displayName: string; handle: string }) => Promise<void>;
+  removeAccount: (id: string) => Promise<void>;
+  createInvite: (platform: Platform, clientName: string) => Promise<void>;
+  revokeInvite: (id: string) => Promise<void>;
+  acceptInvite: (id: string) => Promise<void>;
+  setPlan: (p: PlanTier) => Promise<void>;
+  setAiMode: (m: AiMode) => Promise<void>;
+  saveByoKeys: (keys: { anthropicKey?: string; openaiKey?: string }) => Promise<boolean>;
+  buyCredits: (packageId: "S" | "M" | "L") => Promise<void>;
+  spendCredits: (kind: "caption" | "image", label: string) => Promise<boolean>;
+  toggleCommentLike: (id: string) => Promise<void>;
+  replyComment: (id: string, text: string) => Promise<boolean>;
+  deleteComment: (id: string) => Promise<void>;
 }
 
 const StoreContext = createContext<Store | null>(null);
 
-let nextId = 1;
-function genId(prefix: string): string {
-  return `${prefix}-${nextId++}-${Math.random().toString(36).slice(2, 7)}`;
-}
+export function StoreProvider({
+  initial,
+  children,
+}: {
+  initial: WorkspaceBundle;
+  children: React.ReactNode;
+}) {
+  const [bundle, setBundle] = useState<WorkspaceBundle>(initial);
+  const [error, setError] = useState<string | null>(null);
 
-function today(): string {
-  const d = new Date();
-  return `${String(d.getDate()).padStart(2, "0")}.${String(
-    d.getMonth() + 1
-  ).padStart(2, "0")}.${d.getFullYear()}`;
-}
-
-export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [accounts, setAccounts] = useState<SocialAccount[]>(DEMO_ACCOUNTS);
-  const [posts, setPosts] = useState<Post[]>(() => buildDemoPosts());
-  const [invites, setInvites] = useState<ConnectionInvite[]>([
-    {
-      id: "inv-demo-1",
-      platform: "instagram",
-      clientName: "Bäckerei Berger",
-      token: "k3x9mq2v",
-      status: "pending",
-      createdAt: "02.07.2026",
-    },
-  ]);
-  const [plan, setPlan] = useState<PlanTier>("pro");
-  const [aiMode, setAiMode] = useState<AiMode>("credits");
-  const [credits, setCredits] = useState(480);
-  const [creditLog, setCreditLog] = useState<CreditEntry[]>(DEMO_CREDIT_LOG);
-
-  const addAccount = useCallback((a: Omit<SocialAccount, "id">) => {
-    setAccounts((prev) => [...prev, { ...a, id: genId("acc") }]);
+  /** Ergebnis einer Action einarbeiten; liefert ok-Flag zurück */
+  const apply = useCallback(async (promise: Promise<ActionResult>): Promise<boolean> => {
+    try {
+      const res = await promise;
+      if (res.bundle) setBundle(res.bundle);
+      if (!res.ok) setError(res.error ?? "Unbekannter Fehler");
+      return res.ok;
+    } catch (e) {
+      console.error(e);
+      setError("Etwas ist schiefgelaufen — bitte noch einmal versuchen.");
+      return false;
+    }
   }, []);
-
-  const removeAccount = useCallback((id: string) => {
-    setAccounts((prev) => prev.filter((a) => a.id !== id));
-    // Posts behalten, aber den entfernten Account aus den Zielen streichen
-    setPosts((prev) =>
-      prev.map((p) => ({
-        ...p,
-        accountIds: p.accountIds.filter((aid) => aid !== id),
-      }))
-    );
-  }, []);
-
-  const createInvite = useCallback((platform: Platform, clientName: string) => {
-    setInvites((prev) => [
-      {
-        id: genId("inv"),
-        platform,
-        clientName,
-        token: Math.random().toString(36).slice(2, 10),
-        status: "pending" as const,
-        createdAt: today(),
-      },
-      ...prev,
-    ]);
-  }, []);
-
-  const revokeInvite = useCallback((id: string) => {
-    setInvites((prev) => prev.filter((i) => i.id !== id));
-  }, []);
-
-  const acceptInvite = useCallback((id: string) => {
-    setInvites((prev) => {
-      const inv = prev.find((i) => i.id === id);
-      if (!inv || inv.status !== "pending") return prev;
-      // In Produktion passiert das im OAuth-Callback des Kunden; hier simuliert
-      setAccounts((accs) => [
-        ...accs,
-        {
-          id: genId("acc"),
-          platform: inv.platform,
-          displayName: inv.clientName,
-          handle: "@" + inv.clientName.toLowerCase().replace(/[^a-zä-ü0-9]+/gi, ""),
-        },
-      ]);
-      return prev.map((i) => (i.id === id ? { ...i, status: "accepted" as const } : i));
-    });
-  }, []);
-
-  const savePost = useCallback(
-    (p: Omit<Post, "id"> & { id?: string }) => {
-      setPosts((prev) => {
-        if (p.id) {
-          return prev.map((old) => (old.id === p.id ? { ...old, ...p, id: p.id } : old));
-        }
-        return [...prev, { ...p, id: genId("post") }];
-      });
-    },
-    []
-  );
-
-  const deletePost = useCallback((id: string) => {
-    setPosts((prev) => prev.filter((p) => p.id !== id));
-  }, []);
-
-  const buyCredits = useCallback((amount: number, label: string) => {
-    setCredits((c) => c + amount);
-    setCreditLog((log) => [
-      { id: genId("ct"), label, amount, when: today() },
-      ...log,
-    ]);
-  }, []);
-
-  const spendCredits = useCallback(
-    (amount: number, label: string): boolean => {
-      let ok = false;
-      setCredits((c) => {
-        if (c < amount) return c;
-        ok = true;
-        return c - amount;
-      });
-      if (ok) {
-        setCreditLog((log) => [
-          { id: genId("ct"), label, amount: -amount, when: today() },
-          ...log,
-        ]);
-      }
-      return ok;
-    },
-    []
-  );
 
   const value = useMemo<Store>(
     () => ({
-      accounts,
-      posts,
-      invites,
-      plan,
-      aiMode,
-      credits,
-      creditLog,
-      addAccount,
-      removeAccount,
-      createInvite,
-      revokeInvite,
-      acceptInvite,
-      savePost,
-      deletePost,
-      setPlan,
-      setAiMode,
-      buyCredits,
-      spendCredits,
+      ...bundle,
+      error,
+      clearError: () => setError(null),
+      savePost: (p) => apply(savePostAction(p)),
+      deletePost: async (id) => void (await apply(deletePostAction(id))),
+      addAccount: async (a) => void (await apply(addAccountAction(a))),
+      removeAccount: async (id) => void (await apply(removeAccountAction(id))),
+      createInvite: async (platform, clientName) =>
+        void (await apply(createInviteAction({ platform, clientName }))),
+      revokeInvite: async (id) => void (await apply(revokeInviteAction(id))),
+      acceptInvite: async (id) => void (await apply(acceptInviteAction(id))),
+      setPlan: async (p) => void (await apply(setPlanAction(p))),
+      setAiMode: async (m) => void (await apply(setAiModeAction(m))),
+      saveByoKeys: (keys) => apply(saveByoKeysAction(keys)),
+      buyCredits: async (pkg) => void (await apply(buyCreditsAction(pkg))),
+      spendCredits: (kind, label) => apply(spendCreditsAction(kind, label)),
+      toggleCommentLike: async (id) => void (await apply(toggleCommentLikeAction(id))),
+      replyComment: (id, text) => apply(replyCommentAction(id, text)),
+      deleteComment: async (id) => void (await apply(deleteCommentAction(id))),
     }),
-    [
-      accounts,
-      posts,
-      invites,
-      plan,
-      aiMode,
-      credits,
-      creditLog,
-      addAccount,
-      removeAccount,
-      createInvite,
-      revokeInvite,
-      acceptInvite,
-      savePost,
-      deletePost,
-      buyCredits,
-      spendCredits,
-    ]
+    [bundle, error, apply]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

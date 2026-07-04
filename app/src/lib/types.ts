@@ -13,10 +13,10 @@ export const PLATFORMS: Record<
 > = {
   instagram: { label: "Instagram", short: "IG", color: "#e1306c" },
   facebook: { label: "Facebook", short: "FB", color: "#1877f2" },
-  tiktok: { label: "TikTok", short: "TT", color: "#22d3ee" },
+  tiktok: { label: "TikTok", short: "TT", color: "#0891b2" },
   linkedin: { label: "LinkedIn", short: "IN", color: "#0a66c2" },
   youtube: { label: "YouTube", short: "YT", color: "#ff4444" },
-  x: { label: "X (Twitter)", short: "X", color: "#9ca3af" },
+  x: { label: "X (Twitter)", short: "X", color: "#6b7280" },
   pinterest: { label: "Pinterest", short: "PI", color: "#e60023" },
 };
 
@@ -46,6 +46,22 @@ export const STATUS_LABELS: Record<PostStatus, string> = {
   failed: "Fehler",
 };
 
+/** Medien-Anhang: echte Uploads haben eine id + /uploads/-URL,
+ *  Platzhalter (Demo/KI) haben url "placeholder:<hue>" */
+export interface MediaItem {
+  id: string | null;
+  url: string;
+}
+
+/** CSS-Hintergrund für eine Medien-Kachel */
+export function mediaBackground(url: string): string {
+  if (url.startsWith("placeholder:")) {
+    const hue = Number(url.slice("placeholder:".length)) || 0;
+    return `linear-gradient(135deg, hsl(${hue} 55% 55%), hsl(${(hue + 60) % 360} 55% 35%))`;
+  }
+  return `url(${JSON.stringify(url)}) center/cover`;
+}
+
 export interface Post {
   id: string;
   body: string;
@@ -56,8 +72,27 @@ export interface Post {
   accountIds: string[];
   status: PostStatus;
   format: PostFormat;
-  /** Demo-Medien: ein Farbton (hue) pro Platzhalter-Kachel */
-  media: number[];
+  media: MediaItem[];
+}
+
+export interface CommentReply {
+  id: string;
+  text: string;
+  when: string;
+}
+
+export interface CommentItem {
+  id: string;
+  postId: string;
+  postSnippet: string;
+  platform: Platform;
+  accountLabel: string;
+  author: string;
+  authorHandle: string | null;
+  text: string;
+  likedByUs: boolean;
+  when: string;
+  replies: CommentReply[];
 }
 
 export type InviteStatus = "pending" | "accepted" | "revoked";

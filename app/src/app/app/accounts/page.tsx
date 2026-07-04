@@ -36,15 +36,15 @@ export default function AccountsPage() {
     setMode("choose");
   }
 
-  function submitSelf() {
+  async function submitSelf() {
     if (!displayName.trim() || !handle.trim()) return;
-    addAccount({ platform, displayName: displayName.trim(), handle: handle.trim() });
+    await addAccount({ platform, displayName: displayName.trim(), handle: handle.trim() });
     setMode(null);
   }
 
-  function submitInvite() {
+  async function submitInvite() {
     if (!clientName.trim()) return;
-    createInvite(platform, clientName.trim());
+    await createInvite(platform, clientName.trim());
     setMode("invite-done");
   }
 
@@ -85,7 +85,7 @@ export default function AccountsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Accounts</h1>
           <p className="mt-1 text-sm text-muted">
-            Verbinde beliebig viele Profile — <span className="text-accent">ohne Limit</span>, in jedem Tarif.
+            Verbinde beliebig viele Profile — <span className="text-accent-fg">ohne Limit</span>, in jedem Tarif.
           </p>
         </div>
         <Button onClick={openDialog}>+ Account verbinden</Button>
@@ -124,7 +124,7 @@ export default function AccountsPage() {
 
         <button
           onClick={openDialog}
-          className="flex min-h-44 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line text-muted transition hover:border-accent hover:text-accent"
+          className="flex min-h-44 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line text-muted transition hover:border-accent hover:text-accent-fg"
         >
           <span className="text-2xl">+</span>
           <span className="text-sm font-medium">Account verbinden</span>

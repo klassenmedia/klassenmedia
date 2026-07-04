@@ -61,7 +61,7 @@ export default function DashboardPage() {
         {upcoming.length === 0 && (
           <div className="p-8 text-center text-sm text-muted">
             Noch nichts geplant.{" "}
-            <Link href="/app/planner" className="text-accent hover:underline">
+            <Link href="/app/planner" className="text-accent-fg hover:underline">
               Plane deinen ersten Post →
             </Link>
           </div>
@@ -102,7 +102,7 @@ export default function DashboardPage() {
             Lass dir Captions, Content-Ideen und Bilder generieren — mit deinen
             Credits oder deinem eigenen API-Key.
           </p>
-          <Link href="/app/ai" className="mt-4 inline-block text-sm font-medium text-accent hover:underline">
+          <Link href="/app/ai" className="mt-4 inline-block text-sm font-medium text-accent-fg hover:underline">
             Zum KI-Studio →
           </Link>
         </div>
@@ -112,7 +112,7 @@ export default function DashboardPage() {
             Verbinde beliebig viele Profile — bei uns gibt es keine Account-Limits,
             in keinem Tarif.
           </p>
-          <Link href="/app/accounts" className="mt-4 inline-block text-sm font-medium text-accent hover:underline">
+          <Link href="/app/accounts" className="mt-4 inline-block text-sm font-medium text-accent-fg hover:underline">
             Account hinzufügen →
           </Link>
         </div>
