@@ -27,7 +27,7 @@ export interface SocialAccount {
   handle: string;
 }
 
-export type PostStatus = "draft" | "scheduled" | "published" | "failed";
+export type PostStatus = "draft" | "scheduled" | "publishing" | "published" | "failed";
 
 export type PostFormat = "text" | "image" | "video" | "carousel" | "story";
 
@@ -42,6 +42,7 @@ export const FORMATS: Record<PostFormat, { label: string; hint: string; maxMedia
 export const STATUS_LABELS: Record<PostStatus, string> = {
   draft: "Entwurf",
   scheduled: "Geplant",
+  publishing: "Wird veröffentlicht …",
   published: "Veröffentlicht",
   failed: "Fehler",
 };
@@ -73,6 +74,8 @@ export interface Post {
   status: PostStatus;
   format: PostFormat;
   media: MediaItem[];
+  /** Publishing-Fehler pro Ziel-Account, z. B. "@handle: Text zu lang" */
+  publishErrors: string[];
 }
 
 export interface CommentReply {

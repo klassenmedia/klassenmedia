@@ -27,9 +27,11 @@ oder unter `/register` ein eigenes Konto anlegen.
 | Bild-Upload im Composer | ✅ echt (lokales Dateisystem, `public/uploads/`) |
 | Accounts & Verbindungslinks | ✅ persistiert — echte OAuth-Anbindung folgt in Phase 2 |
 | Inbox (Kommentare liken/antworten/löschen) | ✅ persistiert — Sync mit Plattformen folgt in Phase 2 |
-| KI-Credits (Kauf/Verbrauch, serverseitige Preise) | ✅ persistiert — Stripe folgt in Phase 3, echte KI in Phase 4 |
+| KI-Credits (Kauf/Verbrauch, serverseitige Preise) | ✅ persistiert — echte KI in Phase 4 |
 | BYO-API-Keys | ✅ verschlüsselt gespeichert (AES-256-GCM) |
-| Veröffentlichen auf Plattformen | 🔲 Phase 2 |
+| Publishing-Engine (Scheduler, Plattformregeln, Retries) | ✅ läuft lokal im Simulationsmodus — echte Plattform-APIs nach App-Review (`PUBLISH_MODE=live`) |
+| Kunden-Freigabeseite `/connect/<token>` | ✅ funktioniert lokal (OAuth-Weiterleitung folgt in Phase 2b) |
+| Stripe (Abo-Checkout, Credit-Kauf, Webhook, Kundenportal) | ✅ Code fertig — aktiviert sich mit `STRIPE_SECRET_KEY` in `.env`, sonst Demo-Modus |
 
 ## Sicherheit (Phase 1)
 

@@ -4,8 +4,15 @@ import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui";
 import { PLANS, PlanTier } from "@/lib/types";
 
+const STATUS_LABELS: Record<string, string> = {
+  trialing: "Testphase",
+  active: "Aktiv",
+  past_due: "Zahlung überfällig",
+  canceled: "Gekündigt",
+};
+
 export default function BillingPage() {
-  const { plan, setPlan } = useStore();
+  const { plan, checkoutPlan, billing, openCustomerPortal } = useStore();
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -58,9 +65,13 @@ export default function BillingPage() {
                   className="w-full"
                   variant={active ? "ghost" : "primary"}
                   disabled={active}
-                  onClick={() => setPlan(tier)}
+                  onClick={() => checkoutPlan(tier)}
                 >
-                  {active ? "Aktiv" : `Zu ${p.name} wechseln (Demo)`}
+                  {active
+                    ? "Aktiv"
+                    : billing.stripeConfigured
+                      ? `Zu ${p.name} wechseln`
+                      : `Zu ${p.name} wechseln (Demo)`}
                 </Button>
               </div>
             </div>
@@ -71,22 +82,39 @@ export default function BillingPage() {
       <div className="mt-8 grid gap-4 md:grid-cols-2">
         <div className="rounded-2xl border border-line bg-surface p-6">
           <h3 className="font-semibold">Zahlungsmethode & Rechnungen</h3>
+          {billing.subscriptionStatus && (
+            <p className="mt-2 text-sm">
+              Abo-Status:{" "}
+              <span className="font-medium text-accent-fg">
+                {STATUS_LABELS[billing.subscriptionStatus] ?? billing.subscriptionStatus}
+              </span>
+              {billing.currentPeriodEnd && (
+                <span className="text-muted"> · verlängert sich am {billing.currentPeriodEnd}</span>
+              )}
+            </p>
+          )}
           <p className="mt-2 text-sm text-muted">
-            Im fertigen Produkt öffnet sich hier das Stripe Customer Portal: Zahlungsmethode
-            ändern, Rechnungen herunterladen, Abo kündigen — alles Self-Service, ohne Support-Ticket.
+            {billing.stripeConfigured
+              ? "Zahlungsmethode ändern, Rechnungen herunterladen, Abo kündigen — alles Self-Service im Stripe-Kundenportal."
+              : "Stripe ist lokal noch nicht konfiguriert — mit STRIPE_SECRET_KEY in der .env laufen Abo-Wechsel und Credit-Käufe über echten Stripe Checkout (14 Tage Trial inklusive). Ohne Key gilt der Demo-Modus."}
           </p>
-          <Button variant="ghost" className="mt-4" disabled>
-            Stripe Customer Portal (folgt in Phase 3)
+          <Button
+            variant="ghost"
+            className="mt-4"
+            disabled={!billing.stripeConfigured}
+            onClick={openCustomerPortal}
+          >
+            Stripe-Kundenportal öffnen
           </Button>
         </div>
         <div className="rounded-2xl border border-line bg-surface p-6">
           <h3 className="font-semibold">Jährlich zahlen & sparen</h3>
           <p className="mt-2 text-sm text-muted">
-            Bei jährlicher Zahlung sind 2 Monate geschenkt (≈ −17 %). Umstellung jederzeit
-            zum nächsten Abrechnungszeitraum möglich.
+            Bei jährlicher Zahlung sind 2 Monate geschenkt (≈ −17 %). Die Jahres-Preise
+            schalten wir zum Launch frei — die Checkout-Struktur ist dafür vorbereitet.
           </p>
           <Button variant="ghost" className="mt-4" disabled>
-            Auf jährlich umstellen (Demo)
+            Auf jährlich umstellen (folgt)
           </Button>
         </div>
       </div>

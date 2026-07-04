@@ -54,6 +54,13 @@ model Workspace {
   plan               String              @default("starter") // starter | pro | agency
   creditBalance      Int                 @default(0)
   creditTransactions CreditTransaction[]
+  // Stripe (Phase 3) — null = Demo-Modus ohne Zahlungsanbindung
+  stripeCustomerId     String?           @unique
+  stripeSubscriptionId String?
+  subscriptionStatus   String? // trialing | active | past_due | canceled
+  currentPeriodEnd     DateTime?
+  // monatliches Credit-Kontingent: Zeitpunkt der letzten Gutschrift
+  lastGrantAt          DateTime?
 }
 
 model WorkspaceMember {
@@ -121,13 +128,17 @@ model Post {
   @@index([status, scheduledAt]) // Scheduler-Query (Phase 2): fällige Posts
 }
 
-// Verknüpfung Post ↔ SocialAccount (Phase 2 ergänzt bodyOverride, publishedPostId, error)
+// Verknüpfung Post ↔ SocialAccount inkl. Publishing-Ergebnis pro Ziel
 model PostAccount {
-  id        String        @id @default(cuid())
-  post      Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    String
-  account   SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  accountId String
+  id              String        @id @default(cuid())
+  post            Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId          String
+  account         SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId       String
+  publishedPostId String? // ID beim Provider nach Erfolg
+  publishedAt     DateTime?
+  error           String? // letzte Fehlermeldung des Publishers
+  attemptCount    Int           @default(0)
 
   @@unique([postId, accountId])
 }

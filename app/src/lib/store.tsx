@@ -20,10 +20,14 @@ import {
 } from "./types";
 import type { WorkspaceBundle } from "./data";
 import {
+  checkoutCreditsAction,
+  checkoutPlanAction,
+  customerPortalAction,
+} from "./billing-actions";
+import {
   acceptInviteAction,
   ActionResult,
   addAccountAction,
-  buyCreditsAction,
   createInviteAction,
   deleteCommentAction,
   deletePostAction,
@@ -33,7 +37,6 @@ import {
   savePostAction,
   saveByoKeysAction,
   setAiModeAction,
-  setPlanAction,
   spendCreditsAction,
   toggleCommentLikeAction,
 } from "./actions";
@@ -61,6 +64,7 @@ interface Store {
   hasByoKeys: boolean;
   credits: number;
   creditLog: CreditEntry[];
+  billing: WorkspaceBundle["billing"];
   error: string | null;
   clearError: () => void;
   savePost: (p: SavePostInput) => Promise<boolean>;
@@ -70,10 +74,13 @@ interface Store {
   createInvite: (platform: Platform, clientName: string) => Promise<void>;
   revokeInvite: (id: string) => Promise<void>;
   acceptInvite: (id: string) => Promise<void>;
-  setPlan: (p: PlanTier) => Promise<void>;
+  /** Abo abschließen/wechseln — leitet zu Stripe weiter, wenn konfiguriert */
+  checkoutPlan: (p: PlanTier) => Promise<void>;
   setAiMode: (m: AiMode) => Promise<void>;
   saveByoKeys: (keys: { anthropicKey?: string; openaiKey?: string }) => Promise<boolean>;
+  /** Credits kaufen — leitet zu Stripe weiter, wenn konfiguriert */
   buyCredits: (packageId: "S" | "M" | "L") => Promise<void>;
+  openCustomerPortal: () => Promise<void>;
   spendCredits: (kind: "caption" | "image", label: string) => Promise<boolean>;
   toggleCommentLike: (id: string) => Promise<void>;
   replyComment: (id: string, text: string) => Promise<boolean>;
@@ -119,10 +126,34 @@ export function StoreProvider({
         void (await apply(createInviteAction({ platform, clientName }))),
       revokeInvite: async (id) => void (await apply(revokeInviteAction(id))),
       acceptInvite: async (id) => void (await apply(acceptInviteAction(id))),
-      setPlan: async (p) => void (await apply(setPlanAction(p))),
+      checkoutPlan: async (p) => {
+        const res = await checkoutPlanAction(p);
+        if (res.url) {
+          window.location.href = res.url; // Stripe Checkout
+          return;
+        }
+        if (res.bundle) setBundle(res.bundle);
+        if (!res.ok) setError(res.error ?? "Unbekannter Fehler");
+      },
       setAiMode: async (m) => void (await apply(setAiModeAction(m))),
       saveByoKeys: (keys) => apply(saveByoKeysAction(keys)),
-      buyCredits: async (pkg) => void (await apply(buyCreditsAction(pkg))),
+      buyCredits: async (pkg) => {
+        const res = await checkoutCreditsAction(pkg);
+        if (res.url) {
+          window.location.href = res.url;
+          return;
+        }
+        if (res.bundle) setBundle(res.bundle);
+        if (!res.ok) setError(res.error ?? "Unbekannter Fehler");
+      },
+      openCustomerPortal: async () => {
+        const res = await customerPortalAction();
+        if (res.url) {
+          window.location.href = res.url;
+          return;
+        }
+        if (!res.ok) setError(res.error ?? "Unbekannter Fehler");
+      },
       spendCredits: (kind, label) => apply(spendCreditsAction(kind, label)),
       toggleCommentLike: async (id) => void (await apply(toggleCommentLikeAction(id))),
       replyComment: (id, text) => apply(replyCommentAction(id, text)),

@@ -19,6 +19,11 @@ export interface WorkspaceBundle {
   aiMode: AiMode;
   hasByoKeys: boolean;
   credits: number;
+  billing: {
+    stripeConfigured: boolean;
+    subscriptionStatus: string | null;
+    currentPeriodEnd: string | null;
+  };
   accounts: SocialAccount[];
   posts: Post[];
   invites: ConnectionInvite[];
@@ -52,7 +57,7 @@ export async function getWorkspaceBundle(
     db.post.findMany({
       where: { workspaceId },
       include: {
-        accounts: true,
+        accounts: { include: { account: true } },
         media: { orderBy: { sortOrder: "asc" } },
       },
       orderBy: { scheduledAt: "asc" },
@@ -84,6 +89,13 @@ export async function getWorkspaceBundle(
     aiMode: workspace.aiMode as AiMode,
     hasByoKeys: Boolean(workspace.anthropicKeyEnc || workspace.openaiKeyEnc),
     credits: workspace.creditBalance,
+    billing: {
+      stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
+      subscriptionStatus: workspace.subscriptionStatus,
+      currentPeriodEnd: workspace.currentPeriodEnd
+        ? fmtDate(workspace.currentPeriodEnd)
+        : null,
+    },
     accounts: accounts.map((a) => ({
       id: a.id,
       platform: a.platform as Platform,
@@ -99,6 +111,9 @@ export async function getWorkspaceBundle(
       status: p.status as Post["status"],
       format: p.format as Post["format"],
       media: p.media.map((m) => ({ id: m.id, url: m.url })),
+      publishErrors: p.accounts
+        .filter((pa) => pa.error && !pa.publishedAt)
+        .map((pa) => `${pa.account.handle}: ${pa.error}`),
     })),
     invites: invites.map((i) => ({
       id: i.id,

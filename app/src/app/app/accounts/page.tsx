@@ -49,7 +49,7 @@ export default function AccountsPage() {
   }
 
   function copyLink(token: string) {
-    const link = `https://planbar.app/connect/${token}`;
+    const link = `${window.location.origin}/connect/${token}`;
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(link).catch(() => {});
     }
@@ -146,7 +146,7 @@ export default function AccountsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium">{inv.clientName}</div>
                   <div className="truncate font-mono text-xs text-muted">
-                    planbar.app/connect/{inv.token} · erstellt {inv.createdAt}
+                    /connect/{inv.token} · erstellt {inv.createdAt}
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
@@ -284,7 +284,7 @@ export default function AccountsPage() {
             </p>
             <div className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2.5">
               <span className="min-w-0 flex-1 truncate font-mono text-sm">
-                planbar.app/connect/{invites[0]?.token}
+                /connect/{invites[0]?.token}
               </span>
               <Button
                 variant="ghost"

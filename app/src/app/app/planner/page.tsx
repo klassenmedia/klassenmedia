@@ -299,6 +299,27 @@ export default function PlannerPage() {
           wide
         >
           <div className="flex flex-col gap-4">
+            {composer.id &&
+              (() => {
+                const original = posts.find((p) => p.id === composer.id);
+                if (!original || original.publishErrors.length === 0) return null;
+                return (
+                  <div className="rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm">
+                    <div className="font-medium text-danger">
+                      Veröffentlichung fehlgeschlagen:
+                    </div>
+                    <ul className="mt-1 list-inside list-disc text-danger/90">
+                      {original.publishErrors.map((e) => (
+                        <li key={e}>{e}</li>
+                      ))}
+                    </ul>
+                    <p className="mt-1.5 text-xs text-muted">
+                      Behebe das Problem (Text/Format/Accounts) und speichere mit Status
+                      „Geplant“ — dann wird es automatisch erneut versucht.
+                    </p>
+                  </div>
+                );
+              })()}
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <label className="text-sm font-medium">Text</label>

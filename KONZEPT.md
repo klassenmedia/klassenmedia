@@ -195,14 +195,14 @@ Details: `app/prisma/schema.prisma`.
 
 ## 8. Roadmap
 
-| Phase | Inhalt | Ergebnis |
+| Phase | Inhalt | Status |
 |---|---|---|
-| **0 — Prototyp (dieses Repo)** | UI/UX komplett klickbar mit Demo-Daten: Kalender, Composer, Accounts, KI-Einstellungen, Billing-Seite, Landingpage | Klickbarer Prototyp zum Validieren & Zeigen |
-| **1 — Fundament** | Postgres + Prisma live, Auth, Workspaces, echte Persistenz | Nutzbares internes Tool |
-| **2 — Publishing** | Meta (IG/FB) + LinkedIn Publishing, Scheduler/Queue, App-Reviews | Erste echte Veröffentlichungen |
-| **3 — Billing** | Stripe Abos + Trial + Customer Portal, Credit-Pakete | Verkaufsfähig (Beta) |
-| **4 — KI** | Text-Assist, Bild-Generierung, BYO-Key + Credit-Abrechnung | Voller Funktionsumfang |
-| **5 — Launch** | Landingpage live, Onboarding, E-Mails, Analytics-Basics | Öffentlicher Launch |
+| **0 — Prototyp** | UI/UX komplett klickbar: Kalender, Composer (alle Formate), Accounts, KI, Billing, Landingpage, Mobile-Demo | ✅ fertig |
+| **1 — Fundament** | SQLite/Prisma (lokal), Auth mit sicheren Sessions, echte Persistenz, Bild-Upload, Inbox (Kommentare) | ✅ fertig (Cloud: Provider-Wechsel auf Postgres) |
+| **2 — Publishing** | Scheduler + Adapter-Pattern + Plattformregeln + Retries + Kunden-Freigabeseite `/connect` — läuft lokal im **Simulationsmodus** | ✅ Engine fertig · 🔲 2b: echte Plattform-APIs (Meta App Review!) |
+| **3 — Billing** | Stripe Checkout (Abo mit 14-Tage-Trial, Credit-Pakete), Webhook, Customer Portal — env-gesteuert mit Demo-Fallback | ✅ Code fertig · 🔲 Stripe-Konto + Livemode |
+| **4 — KI** | Echte Text-/Bild-Generierung, BYO-Key-Nutzung, Credit-Abrechnung gegen echte API-Kosten | 🔲 offen |
+| **5 — Launch** | Name+Domain final, Landingpage live, Onboarding, E-Mails, Analytics-Basics, Rechtstexte | 🔲 offen |
 
 ## 9. Rechtliches (nicht vergessen)
 
