@@ -32,6 +32,19 @@ Catalog systematically:
 
 ## Step 2 — Interpret through both traditions
 
+**Reference library — read before interpreting.** This skill ships a detailed lexicon in `references/`; base every interpretation on it (it is more complete and consistent than memory). Read `lesetechnik-grundlagen.md` first (reading order, Shen, symmetry, combination rules), then the files matching the observed features:
+
+- `references/lesetechnik-grundlagen.md` — method, San Ting detail, Shen, Qi Se, combination rules (ALWAYS read)
+- `references/elemente-gesichtsformen.md` — five elements in depth + the ten character face shapes (十字面相) (ALWAYS read)
+- `references/zwoelf-palaeste.md` — all twelve palaces with favorable/challenging signs (ALWAYS read)
+- `references/augenbrauen-augen.md` — eyebrow and eye type lexicon (classical named types)
+- `references/nase-mund-kinn.md` — nose, philtrum, mouth, cheekbones, jaw, chin lexicon
+- `references/stirn-ohren-haare.md` — forehead, hairline, ears, hair lexicon
+- `references/linien-falten-leberflecken.md` — lines, wrinkles and the classical mole map
+- `references/westliche-physiognomik.md` — Western tradition system, history, and East–West synthesis rules
+
+The summaries below are the short form; the reference files override and extend them.
+
 ### Chinese Mian Xiang
 
 **Five-element face shapes (Wu Xing)** — assign the dominant type (mixtures are normal):
