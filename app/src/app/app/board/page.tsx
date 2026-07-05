@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { Button, FormatIcon, inputCls, Modal, PlatformChip } from "@/components/ui";
-import { FORMATS, mediaBackground, Post } from "@/lib/types";
+import { FORMATS, isExternalLink, mediaBackground, Post } from "@/lib/types";
 
 type ColKey = "draft" | "review" | "scheduled" | "published";
 
@@ -205,13 +205,27 @@ export default function BoardPage() {
 
             {detail.media.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {detail.media.map((m, i) => (
-                  <div
-                    key={m.id ?? i}
-                    className="h-16 w-16 overflow-hidden rounded-lg border border-line"
-                    style={{ background: mediaBackground(m.url) }}
-                  />
-                ))}
+                {detail.media.map((m, i) =>
+                  isExternalLink(m.url) ? (
+                    <a
+                      key={m.id ?? i}
+                      href={m.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={m.url}
+                      className="flex h-16 w-16 items-center justify-center rounded-lg border border-line text-lg transition hover:brightness-110"
+                      style={{ background: mediaBackground(m.url) }}
+                    >
+                      🔗
+                    </a>
+                  ) : (
+                    <div
+                      key={m.id ?? i}
+                      className="h-16 w-16 overflow-hidden rounded-lg border border-line"
+                      style={{ background: mediaBackground(m.url) }}
+                    />
+                  )
+                )}
               </div>
             )}
 

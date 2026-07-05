@@ -35,6 +35,12 @@ export async function getClientDetail(
     company: c.company,
     website: c.website,
     notes: c.notes,
+    goals: c.goals,
+    audience: c.audience,
+    topics: c.topics,
+    brandColors: c.brandColors,
+    fonts: c.fonts,
+    hashtags: c.hashtags,
     accounts: c.accounts.map((a) => ({
       id: a.id,
       platform: a.platform as Platform,

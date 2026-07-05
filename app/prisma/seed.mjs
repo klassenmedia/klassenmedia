@@ -174,6 +174,12 @@ async function main() {
       website: "https://baeckerei-berger.example",
       notes:
         "Fokus auf frische Backwaren & Regionalität. Keine Stockfotos – echte Bilder aus der Backstube. Beste Postingzeit morgens.",
+      goals: "Mehr Laufkundschaft, Bekanntheit in der Region steigern.",
+      audience: "Familien & Berufstätige aus der Umgebung, 25–55.",
+      topics: "Frische Backwaren, Team hinter der Theke, saisonale Aktionen.",
+      brandColors: "#8B5E34, #F5E9DA",
+      fonts: "Playfair Display, Inter",
+      hashtags: "#baeckereiberger #regional #frischgebacken #handwerk",
     },
   });
   await db.clientContact.create({

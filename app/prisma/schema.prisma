@@ -110,6 +110,13 @@ model Client {
   company     String?
   website     String?
   notes       String? // Briefing, Absprachen, Do's & Don'ts
+  // Marke & Strategie (Fraukes „Allgemein"-Spalte)
+  goals       String? // Ziele
+  audience    String? // Zielgruppe
+  topics      String? // Kernthemen
+  brandColors String? // Farben
+  fonts       String? // Schriften
+  hashtags    String? // Standard-Hashtags
   createdAt   DateTime        @default(now())
   accounts    SocialAccount[]
   posts       Post[]

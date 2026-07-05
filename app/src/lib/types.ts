@@ -62,6 +62,12 @@ export interface ClientDetail {
   company: string | null;
   website: string | null;
   notes: string | null;
+  goals: string | null;
+  audience: string | null;
+  topics: string | null;
+  brandColors: string | null;
+  fonts: string | null;
+  hashtags: string | null;
   accounts: { id: string; platform: Platform; handle: string }[];
   contacts: ClientContactItem[];
   tasks: ClientTaskItem[];
@@ -76,7 +82,7 @@ export const FORMATS: Record<PostFormat, { label: string; hint: string; maxMedia
   text: { label: "Text", hint: "Nur Text — ideal für X und LinkedIn", maxMedia: 0 },
   image: { label: "Bild", hint: "Ein Bild im Feed", maxMedia: 1 },
   video: { label: "Video / Reel", hint: "Video, Reel oder Short", maxMedia: 1 },
-  carousel: { label: "Karussell", hint: "Bis zu 10 Bilder zum Durchwischen", maxMedia: 10 },
+  carousel: { label: "Karussell", hint: "Bis zu 20 Bilder zum Durchwischen (Ads nur 10)", maxMedia: 20 },
   story: { label: "Story", hint: "24 h sichtbar, Hochformat 9:16", maxMedia: 1 },
 };
 
@@ -95,11 +101,20 @@ export interface MediaItem {
   url: string;
 }
 
+/** Externer Medien-Link (Dropbox/Drive/URL) statt lokalem Upload */
+export function isExternalLink(url: string): boolean {
+  return /^https?:\/\//i.test(url);
+}
+
 /** CSS-Hintergrund für eine Medien-Kachel */
 export function mediaBackground(url: string): string {
   if (url.startsWith("placeholder:")) {
     const hue = Number(url.slice("placeholder:".length)) || 0;
     return `linear-gradient(135deg, hsl(${hue} 55% 55%), hsl(${(hue + 60) % 360} 55% 35%))`;
+  }
+  if (isExternalLink(url)) {
+    // externe Datei (z. B. Dropbox-Video) — kein Bild-Preview, neutrale Kachel
+    return "linear-gradient(135deg, #334155, #1e293b)";
   }
   return `url(${JSON.stringify(url)}) center/cover`;
 }

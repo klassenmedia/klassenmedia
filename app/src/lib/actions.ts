@@ -62,7 +62,7 @@ const CREDIT_PACKAGES: Record<string, { credits: number; label: string }> = {
 };
 const USAGE_COSTS: Record<string, number> = { caption: 1, image: 6 };
 const FORMAT_MAX_MEDIA: Record<string, number> = {
-  text: 0, image: 1, video: 1, carousel: 10, story: 1,
+  text: 0, image: 1, video: 1, carousel: 20, story: 1,
 };
 
 async function ok(): Promise<ActionResult> {
@@ -95,7 +95,7 @@ const postSchema = z.object({
   format: z.enum(["text", "image", "video", "carousel", "story"]),
   media: z
     .array(z.object({ id: z.string().nullable(), url: z.string().max(500) }))
-    .max(10),
+    .max(20),
 });
 
 export async function savePostAction(input: unknown): Promise<ActionResult> {
@@ -189,6 +189,18 @@ export async function savePostAction(input: unknown): Promise<ActionResult> {
           workspaceId: workspace.id,
           url: item.url,
           source: "placeholder",
+          postId,
+          sortOrder: i,
+        },
+      });
+    } else if (/^https?:\/\//i.test(item.url)) {
+      // externer Medien-Link (Dropbox/Drive/URL) — z. B. großes Video
+      await db.mediaAsset.create({
+        data: {
+          workspaceId: workspace.id,
+          url: item.url,
+          kind: "video",
+          source: "link",
           postId,
           sortOrder: i,
         },

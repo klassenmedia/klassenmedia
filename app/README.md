@@ -26,7 +26,9 @@ oder unter `/register` ein eigenes Konto anlegen.
 | Posts, Formate, Kalender | ✅ echt (SQLite, überlebt Neustart) |
 | Kanban-Board (Pipeline: Entwurf → In Freigabe → Geplant → Veröffentlicht, Drag-and-drop) | ✅ echt — Verschieben/Freigeben rollen-geprüft |
 | Kunden-Ebene + Kontext-Umschalter (Kunde wählen → alles zeigt nur ihn, übersteht Reloads) | ✅ echt — eine Agentur, ein Abo, viele Kunden sauber getrennt |
-| CRM: Kunden-Profil (Stammdaten, Ansprechpartner, Notizen, To-dos) | ✅ echt — schlankes CRM je Kunde, rollen-geprüft |
+| CRM: Kunden-Profil (Stammdaten, Marke & Strategie, Ansprechpartner, Notizen, To-dos) | ✅ echt — schlankes CRM je Kunde, rollen-geprüft |
+| Externer Medien-Link (großes Video per Dropbox/Drive-URL) | ✅ am Beitrag, im Composer & in der Freigabe direkt anklickbar |
+| Karussell bis 20 Folien | ✅ (organisch; Ads-Hinweis: nur 10) |
 | Bild-Upload im Composer | ✅ echt (lokales Dateisystem, `public/uploads/`) |
 | Accounts & Verbindungslinks | ✅ persistiert — echte OAuth-Anbindung folgt in Phase 2 |
 | Inbox (Kommentare liken/antworten/löschen) | ✅ persistiert — Sync mit Plattformen folgt in Phase 2 |

@@ -34,6 +34,15 @@ export function ClientDetailView({
   const [notes, setNotes] = useState(initial.notes ?? "");
   const [savingProfile, setSavingProfile] = useState(false);
 
+  // Marke & Strategie
+  const [goals, setGoals] = useState(initial.goals ?? "");
+  const [audience, setAudience] = useState(initial.audience ?? "");
+  const [topics, setTopics] = useState(initial.topics ?? "");
+  const [brandColors, setBrandColors] = useState(initial.brandColors ?? "");
+  const [fonts, setFonts] = useState(initial.fonts ?? "");
+  const [hashtags, setHashtags] = useState(initial.hashtags ?? "");
+  const [savingBrand, setSavingBrand] = useState(false);
+
   // Ansprechpartner
   const [cName, setCName] = useState("");
   const [cRole, setCRole] = useState("");
@@ -54,10 +63,25 @@ export function ClientDetailView({
     return true;
   }
 
-  async function saveProfile() {
-    setSavingProfile(true);
-    apply(await updateClientProfileAction(detail.id, { company, website, notes }));
+  // Ein Speichern für das ganze Profil (sonst würden fehlende Felder genullt)
+  async function saveProfile(which: "profile" | "brand") {
+    if (which === "brand") setSavingBrand(true);
+    else setSavingProfile(true);
+    apply(
+      await updateClientProfileAction(detail.id, {
+        company,
+        website,
+        notes,
+        goals,
+        audience,
+        topics,
+        brandColors,
+        fonts,
+        hashtags,
+      })
+    );
     setSavingProfile(false);
+    setSavingBrand(false);
   }
 
   async function addContact() {
@@ -163,8 +187,53 @@ export function ClientDetailView({
         </div>
         {canEdit && (
           <div className="mt-4">
-            <Button onClick={saveProfile} disabled={savingProfile}>
+            <Button onClick={() => saveProfile("profile")} disabled={savingProfile}>
               {savingProfile ? "Speichert …" : "Stammdaten speichern"}
+            </Button>
+          </div>
+        )}
+      </section>
+
+      {/* Marke & Strategie */}
+      <section className="mb-6 rounded-2xl border border-line bg-surface p-6">
+        <h2 className="font-semibold">Marke &amp; Strategie</h2>
+        <p className="mt-1 text-sm text-muted">
+          Das Wichtigste auf einen Blick — damit jeder im Team konsistent für diesen Kunden postet.
+        </p>
+        <div className="mt-4 grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Ziele</label>
+              <textarea value={goals} onChange={(e) => setGoals(e.target.value)} disabled={!canEdit} rows={2} placeholder="Was soll erreicht werden?" className={inputCls} />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Zielgruppe</label>
+              <textarea value={audience} onChange={(e) => setAudience(e.target.value)} disabled={!canEdit} rows={2} placeholder="Wen sprechen wir an?" className={inputCls} />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">Kernthemen</label>
+            <textarea value={topics} onChange={(e) => setTopics(e.target.value)} disabled={!canEdit} rows={2} placeholder="Worum geht es inhaltlich?" className={inputCls} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Farben</label>
+              <input value={brandColors} onChange={(e) => setBrandColors(e.target.value)} disabled={!canEdit} placeholder="z. B. #2563eb, Gold" className={inputCls} />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Schriften</label>
+              <input value={fonts} onChange={(e) => setFonts(e.target.value)} disabled={!canEdit} placeholder="z. B. Inter, Playfair" className={inputCls} />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">Standard-Hashtags</label>
+            <textarea value={hashtags} onChange={(e) => setHashtags(e.target.value)} disabled={!canEdit} rows={2} placeholder="#backstube #regional …" className={inputCls} />
+          </div>
+        </div>
+        {canEdit && (
+          <div className="mt-4">
+            <Button onClick={() => saveProfile("brand")} disabled={savingBrand}>
+              {savingBrand ? "Speichert …" : "Marke & Strategie speichern"}
             </Button>
           </div>
         )}

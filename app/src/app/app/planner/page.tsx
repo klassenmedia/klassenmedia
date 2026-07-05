@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { Button, FormatIcon, inputCls, Modal, PlatformChip, StatusBadge } from "@/components/ui";
 import {
   FORMATS,
+  isExternalLink,
   MediaItem,
   mediaBackground,
   PLATFORMS,
@@ -59,7 +60,21 @@ export default function PlannerPage() {
   const [aiBusy, setAiBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function addLink() {
+    const url = linkUrl.trim();
+    if (!/^https?:\/\//i.test(url)) {
+      setAiHint("Bitte einen gültigen Link (https://…) einfügen.");
+      return;
+    }
+    setComposer((c) => {
+      if (!c || c.media.length >= FORMATS[c.format].maxMedia) return c;
+      return { ...c, media: [...c.media, { id: null, url }] };
+    });
+    setLinkUrl("");
+  }
 
   const todayKey = toDateKey(new Date());
 
@@ -554,12 +569,17 @@ export default function PlannerPage() {
                         composer.format === "story" ? "h-24 w-14" : "h-16 w-16"
                       }`}
                       style={{ background: mediaBackground(item.url) }}
+                      title={isExternalLink(item.url) ? item.url : undefined}
                     >
-                      {composer.format === "video" && (
+                      {isExternalLink(item.url) ? (
+                        <span className="absolute inset-0 flex items-center justify-center text-white/90">
+                          🔗
+                        </span>
+                      ) : composer.format === "video" ? (
                         <span className="absolute inset-0 flex items-center justify-center text-white/90">
                           ▶
                         </span>
-                      )}
+                      ) : null}
                       <button
                         onClick={() => removeMedia(i)}
                         aria-label="Medium entfernen"
@@ -590,9 +610,23 @@ export default function PlannerPage() {
                     onChange={(e) => uploadFiles(e.target.files)}
                   />
                 </div>
+                {composer.media.length < FORMATS[composer.format].maxMedia && (
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      value={linkUrl}
+                      onChange={(e) => setLinkUrl(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addLink())}
+                      placeholder="Oder Video-/Datei-Link einfügen (Dropbox, Drive, …)"
+                      className={inputCls}
+                    />
+                    <Button variant="ghost" onClick={addLink} disabled={!linkUrl.trim()} className="shrink-0">
+                      + Link
+                    </Button>
+                  </div>
+                )}
                 <p className="mt-1.5 text-xs text-muted">
-                  Bilder werden lokal gespeichert (JPG/PNG/WebP/GIF, max. 8 MB). Videos und
-                  KI-Bilder direkt im Composer folgen in Phase 2/4.
+                  Bilder lokal (JPG/PNG/WebP/GIF, max. 8 MB) — oder große Videos per Link
+                  (Dropbox/Drive), den dein Kunde in der Freigabe direkt öffnen kann.
                 </p>
               </div>
             )}

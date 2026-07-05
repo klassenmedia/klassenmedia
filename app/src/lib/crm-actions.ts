@@ -33,6 +33,12 @@ const profileSchema = z.object({
   company: z.string().trim().max(120).optional(),
   website: z.string().trim().max(200).optional(),
   notes: z.string().trim().max(5000).optional(),
+  goals: z.string().trim().max(2000).optional(),
+  audience: z.string().trim().max(2000).optional(),
+  topics: z.string().trim().max(2000).optional(),
+  brandColors: z.string().trim().max(500).optional(),
+  fonts: z.string().trim().max(500).optional(),
+  hashtags: z.string().trim().max(2000).optional(),
 });
 
 export async function updateClientProfileAction(
@@ -43,12 +49,19 @@ export async function updateClientProfileAction(
   if (ctx.error) return { ok: false, error: ctx.error };
   const parsed = profileSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  const d = parsed.data;
   await db.client.update({
     where: { id: clientId },
     data: {
-      company: parsed.data.company ?? null,
-      website: parsed.data.website ?? null,
-      notes: parsed.data.notes ?? null,
+      company: d.company ?? null,
+      website: d.website ?? null,
+      notes: d.notes ?? null,
+      goals: d.goals ?? null,
+      audience: d.audience ?? null,
+      topics: d.topics ?? null,
+      brandColors: d.brandColors ?? null,
+      fonts: d.fonts ?? null,
+      hashtags: d.hashtags ?? null,
     },
   });
   return detailResult(ctx.workspaceId, clientId);

@@ -7,7 +7,7 @@ import {
   ReviewData,
 } from "@/lib/review-actions";
 import { PlatformChip } from "@/components/ui";
-import { FORMATS, mediaBackground } from "@/lib/types";
+import { FORMATS, isExternalLink, mediaBackground } from "@/lib/types";
 
 export function ReviewClient({ token, initial }: { token: string; initial: ReviewData }) {
   const [data, setData] = useState<ReviewData>(initial);
@@ -73,15 +73,30 @@ export function ReviewClient({ token, initial }: { token: string; initial: Revie
 
               {p.media.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {p.media.map((m, i) => (
-                    <div
-                      key={i}
-                      className={`overflow-hidden rounded-lg border border-line ${
-                        p.format === "story" ? "h-28 w-16" : "h-20 w-20"
-                      }`}
-                      style={{ background: mediaBackground(m) }}
-                    />
-                  ))}
+                  {p.media.map((m, i) =>
+                    isExternalLink(m) ? (
+                      <a
+                        key={i}
+                        href={m}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex items-center justify-center rounded-lg border border-line text-center text-[11px] font-medium text-white transition hover:brightness-110 ${
+                          p.format === "story" ? "h-28 w-16" : "h-20 w-20"
+                        }`}
+                        style={{ background: mediaBackground(m) }}
+                      >
+                        🔗 Video ansehen
+                      </a>
+                    ) : (
+                      <div
+                        key={i}
+                        className={`overflow-hidden rounded-lg border border-line ${
+                          p.format === "story" ? "h-28 w-16" : "h-20 w-20"
+                        }`}
+                        style={{ background: mediaBackground(m) }}
+                      />
+                    )
+                  )}
                 </div>
               )}
 
