@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { Button, inputCls, Modal, PlatformChip } from "@/components/ui";
 import type { ClientItem } from "@/lib/types";
@@ -144,6 +145,13 @@ export default function ClientsPage() {
                       ))
                     )}
                   </div>
+
+                  <Link
+                    href={`/app/clients/${c.id}`}
+                    className="mt-4 inline-block text-sm font-medium text-accent-fg hover:underline"
+                  >
+                    Profil öffnen →
+                  </Link>
                 </div>
               </div>
             );

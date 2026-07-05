@@ -122,6 +122,9 @@ gebaut wird sie gestaffelt (siehe Roadmap, Abschnitt 8). Statuslegende:
   Kunde wählen → Planer, Board, Inbox, Accounts zeigen NUR ihn, klar angezeigt
   („Du arbeitest bei Kunde X"); Kontext übersteht Reloads (Cookie). Plus „Alle
   Kunden"-Übersicht. Skaliert sauber auf 15+ Kunden × mehrere Accounts.
+- ✅ CRM je Kunde: Kunden-Profil mit Stammdaten (Firma, Web, Notizen/Briefing),
+  Ansprechpartnern und To-dos — bewusst schlank (kein Sales-Pipeline-Monster),
+  nutzt die vorhandene Kunden-Ebene.
 - ✅ Workspaces (Agentur-Konto), Nutzer in mehreren Workspaces, Wechsler
 - ✅ Team-Mitglieder per Link einladen; Rollen owner/admin/editor/viewer mit
   serverseitig erzwungenen Rechten (`can(role, capability)`); Rolle ändern,

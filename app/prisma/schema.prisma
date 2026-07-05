@@ -106,12 +106,45 @@ model Client {
   workspaceId String
   name        String
   color       String          @default("#2563eb") // für die visuelle Gruppierung
+  // CRM-Stammdaten (schlankes Kunden-Profil)
+  company     String?
+  website     String?
+  notes       String? // Briefing, Absprachen, Do's & Don'ts
   createdAt   DateTime        @default(now())
   accounts    SocialAccount[]
   posts       Post[]
   invites     ConnectionInvite[]
+  contacts    ClientContact[]
+  tasks       ClientTask[]
 
   @@index([workspaceId])
+}
+
+// Ansprechpartner beim Kunden
+model ClientContact {
+  id        String   @id @default(cuid())
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId  String
+  name      String
+  role      String? // z. B. "Marketing-Leitung"
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+
+  @@index([clientId])
+}
+
+// Aufgaben / To-dos pro Kunde
+model ClientTask {
+  id        String    @id @default(cuid())
+  client    Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId  String
+  title     String
+  done      Boolean   @default(false)
+  dueDate   DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([clientId])
 }
 
 // ── Social Accounts & Kunden-Verbindungslinks ─────────────────────────

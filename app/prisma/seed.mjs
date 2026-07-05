@@ -166,6 +166,33 @@ async function main() {
     },
   });
 
+  // CRM-Demo für Bäckerei Berger (Stammdaten, Ansprechpartner, Aufgaben)
+  await db.client.update({
+    where: { id: clientBB.id },
+    data: {
+      company: "Bäckerei Berger GmbH",
+      website: "https://baeckerei-berger.example",
+      notes:
+        "Fokus auf frische Backwaren & Regionalität. Keine Stockfotos – echte Bilder aus der Backstube. Beste Postingzeit morgens.",
+    },
+  });
+  await db.clientContact.create({
+    data: {
+      clientId: clientBB.id,
+      name: "Familie Berger",
+      role: "Inhaber",
+      email: "kontakt@baeckerei-berger.example",
+      phone: "+49 30 1234567",
+    },
+  });
+  await db.clientTask.createMany({
+    data: [
+      { clientId: clientBB.id, title: "Fotoshooting Backstube planen", dueDate: at(5, 10) },
+      { clientId: clientBB.id, title: "Sommer-Kampagne freigeben lassen", done: false },
+      { clientId: clientBB.id, title: "Instagram-Account verbinden", done: true },
+    ],
+  });
+
   console.log("Demo-Daten angelegt:");
   console.log("  Login:    demo@klassenmedia.de");
   console.log("  Passwort: demo1234");

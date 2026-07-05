@@ -37,6 +37,37 @@ export interface ClientItem {
   postCount: number;
 }
 
+// ── CRM: Kunden-Profil ────────────────────────────────────────────────
+
+export interface ClientContactItem {
+  id: string;
+  name: string;
+  role: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+export interface ClientTaskItem {
+  id: string;
+  title: string;
+  done: boolean;
+  dueDate: string | null; // yyyy-mm-dd
+  createdAt: string;
+}
+
+export interface ClientDetail {
+  id: string;
+  name: string;
+  color: string;
+  company: string | null;
+  website: string | null;
+  notes: string | null;
+  accounts: { id: string; platform: Platform; handle: string }[];
+  contacts: ClientContactItem[];
+  tasks: ClientTaskItem[];
+  postCount: number;
+}
+
 export type PostStatus = "draft" | "scheduled" | "publishing" | "published" | "failed";
 
 export type PostFormat = "text" | "image" | "video" | "carousel" | "story";
