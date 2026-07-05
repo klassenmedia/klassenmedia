@@ -5,6 +5,9 @@
   nur die Token-Werte — einmal über die System-Einstellung (prefers-color-scheme),
   einmal explizit über data-theme (der Umschalter in der App gewinnt immer).
   Komponenten stylen ausschließlich über Tokens, nie direkt in den Media Queries.
+
+  Akzent = Blau. Werte WCAG-AA-geprüft: weißer Text auf --accent 5,17:1;
+  --accent-fg (Link-Text) 6,3:1 auf hellem bzw. 7,7:1 auf dunklem Grund.
 */
 
 :root {
@@ -14,9 +17,9 @@
   --border: #e4e4ee;
   --foreground: #17171f;
   --muted: #5b5b6e;
-  --accent: #6d5ae6;
-  --accent-fg: #6d5ae6;
-  --accent-soft: rgba(109, 90, 230, 0.1);
+  --accent: #2563eb;
+  --accent-fg: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.1);
   --accent-contrast: #ffffff;
   --success: #0e9f6e;
   --warning: #b45309;
@@ -31,8 +34,9 @@
     --border: #26263a;
     --foreground: #e9e9f2;
     --muted: #9a9ab0;
-    --accent: #7c6cff;
-    --accent-soft: rgba(124, 108, 255, 0.14);
+    --accent: #2563eb;
+    --accent-fg: #60a5fa;
+    --accent-soft: rgba(59, 130, 246, 0.16);
     --accent-contrast: #ffffff;
     --success: #34d399;
     --warning: #fbbf24;
@@ -48,9 +52,9 @@
   --border: #e4e4ee;
   --foreground: #17171f;
   --muted: #5b5b6e;
-  --accent: #6d5ae6;
-  --accent-fg: #6d5ae6;
-  --accent-soft: rgba(109, 90, 230, 0.1);
+  --accent: #2563eb;
+  --accent-fg: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.1);
   --accent-contrast: #ffffff;
   --success: #0e9f6e;
   --warning: #b45309;
@@ -64,9 +68,9 @@
   --border: #26263a;
   --foreground: #e9e9f2;
   --muted: #9a9ab0;
-  --accent: #7c6cff;
-  --accent-fg: #8f86ff;
-  --accent-soft: rgba(124, 108, 255, 0.14);
+  --accent: #2563eb;
+  --accent-fg: #60a5fa;
+  --accent-soft: rgba(59, 130, 246, 0.16);
   --accent-contrast: #ffffff;
   --success: #34d399;
   --warning: #fbbf24;

@@ -236,8 +236,9 @@ Details: `app/prisma/schema.prisma`.
 - Composer als Overlay über dem Kalender — Kontext nie verlassen.
 - Farbcodierung pro Plattform, konsistent in Kalender, Listen, Filtern.
 - Leere Zustände verkaufen Features („Verbinde deinen ersten Account …").
-- Dunkles, ruhiges UI mit einer Akzentfarbe (Violett), großzügiger Weißraum,
-  Geist als Schrift. Landingpage nutzt dieselbe Designsprache.
+- Ruhiges UI (Hell- und Dunkelmodus) mit einer blauen Akzentfarbe (#2563eb,
+  WCAG-AA-geprüft), großzügiger Weißraum, Geist als Schrift. Landingpage nutzt
+  dieselbe Designsprache.
 - Tastatur-Shortcuts für Power-User (n = neuer Post, ←/→ = Monat wechseln).
 
 ## 8. Roadmap
