@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { Button, inputCls } from "@/components/ui";
+import { mediaBackground } from "@/lib/types";
 
 const CREDIT_PACKAGES = [
   { credits: 500, price: 9, id: "S" },
@@ -13,49 +14,82 @@ const CREDIT_PACKAGES = [
 interface GeneratedImage {
   id: number;
   prompt: string;
-  hue: number;
+  url: string;
+  demo: boolean;
 }
 
 export default function AiPage() {
   const {
     aiMode,
     setAiMode,
+    ai,
     credits,
     creditLog,
     buyCredits,
-    spendCredits,
     saveByoKeys,
     hasByoKeys,
+    generateImage,
+    generateIdeas,
   } = useStore();
   const [anthropicKey, setAnthropicKey] = useState("");
   const [openaiKey, setOpenaiKey] = useState("");
   const [keySaving, setKeySaving] = useState(false);
+
   const [imgPrompt, setImgPrompt] = useState("");
   const [images, setImages] = useState<GeneratedImage[]>([]);
   const [imgHint, setImgHint] = useState<string | null>(null);
+  const [imgBusy, setImgBusy] = useState(false);
 
-  async function generateImage() {
+  const [ideaTopic, setIdeaTopic] = useState("");
+  const [ideas, setIdeas] = useState<string[]>([]);
+  const [ideaHint, setIdeaHint] = useState<string | null>(null);
+  const [ideaBusy, setIdeaBusy] = useState(false);
+  const [copiedIdea, setCopiedIdea] = useState<number | null>(null);
+
+  async function runImage() {
     const prompt = imgPrompt.trim();
     if (!prompt) return;
-    const ok = await spendCredits("image", "Bild generiert (1024×1024)");
-    if (!ok) {
-      setImgHint("Nicht genug Credits — bitte Paket kaufen oder auf eigenen API-Key umstellen.");
-      return;
-    }
-    setImgHint(
-      aiMode === "credits"
-        ? "6 Credits verbraucht (Platzhalter — echte Bild-KI folgt in Phase 4)"
-        : "Über deinen eigenen API-Key (Platzhalter — echte Bild-KI folgt in Phase 4)"
-    );
+    setImgBusy(true);
+    setImgHint(null);
+    const res = await generateImage(prompt);
+    setImgBusy(false);
+    if (!res) return; // Fehlermeldung im globalen Toast
     setImages((prev) => [
-      {
-        id: prev.length + 1,
-        prompt,
-        hue: (prev.length * 67 + prompt.length * 31) % 360,
-      },
+      { id: prev.length + 1, prompt, url: res.url, demo: res.source === "demo" },
       ...prev,
     ]);
+    setImgHint(
+      res.source === "demo"
+        ? "Demo-Platzhalter · echte Bild-KI aktiv, sobald ein OpenAI-Key hinterlegt ist (keine Credits verbraucht)."
+        : aiMode === "byo"
+          ? "Mit deinem eigenen OpenAI-Key erzeugt · keine Credits verbraucht."
+          : "6 Credits verbraucht · Bild in der Medienbibliothek gespeichert."
+    );
     setImgPrompt("");
+  }
+
+  async function runIdeas() {
+    const topic = ideaTopic.trim();
+    if (!topic) return;
+    setIdeaBusy(true);
+    setIdeaHint(null);
+    const res = await generateIdeas(topic);
+    setIdeaBusy(false);
+    if (!res) return;
+    setIdeas(res.ideas);
+    setIdeaHint(
+      res.source === "demo"
+        ? "Demo-Ideen · echte KI aktiv, sobald ein Anthropic-Key hinterlegt ist."
+        : aiMode === "byo"
+          ? "Mit deinem eigenen API-Key erzeugt · keine Credits verbraucht."
+          : "1 Credit verbraucht · mit Claude erzeugt."
+    );
+  }
+
+  function copyIdea(i: number, text: string) {
+    navigator.clipboard?.writeText(text).catch(() => {});
+    setCopiedIdea(i);
+    setTimeout(() => setCopiedIdea(null), 2000);
   }
 
   async function submitKeys() {
@@ -78,6 +112,30 @@ export default function AiPage() {
         <p className="mt-1 text-sm text-muted">
           Texte, Ideen und Bilder generieren — mit Credits von uns oder deinem eigenen API-Key.
         </p>
+      </div>
+
+      {/* Bereitschafts-Hinweis */}
+      <div
+        className={`mb-6 rounded-xl border px-4 py-3 text-sm ${
+          ai.textReady || ai.imageReady
+            ? "border-success/40 bg-success/10"
+            : "border-line bg-surface-2"
+        }`}
+      >
+        {ai.textReady || ai.imageReady ? (
+          <span>
+            <span className="font-medium text-success">Echte KI aktiv.</span>{" "}
+            Text {ai.textReady ? "✓ Claude" : "– kein Schlüssel"} · Bild{" "}
+            {ai.imageReady ? "✓ OpenAI" : "– kein Schlüssel"}
+            {aiMode === "byo" ? " (dein Key)" : " (Plattform-Kontingent)"}.
+          </span>
+        ) : (
+          <span>
+            <span className="font-medium">Demo-Modus.</span> Noch kein API-Key aktiv — Vorschläge
+            sind Platzhalter und kosten keine Credits. Hinterlege einen eigenen Key (BYO) oder
+            im Betrieb setzen wir die Plattform-Keys serverseitig.
+          </span>
+        )}
       </div>
 
       {/* Modus-Wahl */}
@@ -140,10 +198,13 @@ export default function AiPage() {
           <h3 className="font-semibold">API-Keys</h3>
           <p className="mt-1 text-sm text-muted">
             Keys werden verschlüsselt gespeichert (AES-256) und nie im Klartext angezeigt.
+            Text läuft über Anthropic (Claude), Bilder über OpenAI.
           </p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Anthropic API-Key</label>
+              <label className="mb-1.5 block text-sm font-medium">
+                Anthropic API-Key <span className="text-muted">· für Texte</span>
+              </label>
               <input
                 type="password"
                 value={anthropicKey}
@@ -153,7 +214,9 @@ export default function AiPage() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">OpenAI API-Key</label>
+              <label className="mb-1.5 block text-sm font-medium">
+                OpenAI API-Key <span className="text-muted">· für Bilder</span>
+              </label>
               <input
                 type="password"
                 value={openaiKey}
@@ -220,8 +283,47 @@ export default function AiPage() {
         </div>
       )}
 
-      {/* Bild-Generierung */}
+      {/* Content-Ideen */}
       <div className="mt-10 rounded-2xl border border-line bg-surface p-6">
+        <h3 className="font-semibold">💡 Content-Ideen</h3>
+        <p className="mt-1 text-sm text-muted">
+          Gib ein Thema ein — die KI liefert fünf fertige Caption-Ideen zum Übernehmen.
+        </p>
+        <div className="mt-4 flex gap-3">
+          <input
+            value={ideaTopic}
+            onChange={(e) => setIdeaTopic(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !ideaBusy && runIdeas()}
+            placeholder='z. B. "Vorteile von Content-Planung für kleine Betriebe"'
+            className={inputCls}
+          />
+          <Button onClick={runIdeas} disabled={!ideaTopic.trim() || ideaBusy} className="shrink-0">
+            {ideaBusy ? "Denkt …" : `Ideen ${aiMode === "credits" ? "(1 Credit)" : ""}`}
+          </Button>
+        </div>
+        {ideaHint && <p className="mt-2 text-xs text-muted">{ideaHint}</p>}
+        {ideas.length > 0 && (
+          <ul className="mt-4 flex flex-col gap-2">
+            {ideas.map((idea, i) => (
+              <li
+                key={i}
+                className="flex items-start gap-3 rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm"
+              >
+                <span className="flex-1 leading-relaxed">{idea}</span>
+                <button
+                  onClick={() => copyIdea(i, idea)}
+                  className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium text-accent-fg transition hover:bg-accent-soft"
+                >
+                  {copiedIdea === i ? "✓ Kopiert" : "Kopieren"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Bild-Generierung */}
+      <div className="mt-6 rounded-2xl border border-line bg-surface p-6">
         <h3 className="font-semibold">🎨 Bild generieren</h3>
         <p className="mt-1 text-sm text-muted">
           Beschreibe das gewünschte Bild — es landet danach in deiner Medienbibliothek.
@@ -230,12 +332,12 @@ export default function AiPage() {
           <input
             value={imgPrompt}
             onChange={(e) => setImgPrompt(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && generateImage()}
+            onKeyDown={(e) => e.key === "Enter" && !imgBusy && runImage()}
             placeholder='z. B. "Modernes Büro mit Pflanzen, warmes Licht, minimalistisch"'
             className={inputCls}
           />
-          <Button onClick={generateImage} disabled={!imgPrompt.trim()} className="shrink-0">
-            Generieren {aiMode === "credits" ? "(6 Credits)" : ""}
+          <Button onClick={runImage} disabled={!imgPrompt.trim() || imgBusy} className="shrink-0">
+            {imgBusy ? "Malt …" : `Generieren ${aiMode === "credits" ? "(6 Credits)" : ""}`}
           </Button>
         </div>
         {imgHint && <p className="mt-2 text-xs text-muted">{imgHint}</p>}
@@ -243,13 +345,12 @@ export default function AiPage() {
           <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
             {images.map((img) => (
               <div key={img.id} className="overflow-hidden rounded-xl border border-line">
+                <div className="aspect-square" style={{ background: mediaBackground(img.url) }} />
                 <div
-                  className="aspect-square"
-                  style={{
-                    background: `linear-gradient(135deg, hsl(${img.hue} 60% 45%), hsl(${(img.hue + 60) % 360} 60% 30%))`,
-                  }}
-                />
-                <div className="truncate bg-surface-2 px-2.5 py-1.5 text-[11px] text-muted" title={img.prompt}>
+                  className="truncate bg-surface-2 px-2.5 py-1.5 text-[11px] text-muted"
+                  title={img.prompt}
+                >
+                  {img.demo ? "Demo · " : ""}
                   {img.prompt}
                 </div>
               </div>

@@ -30,8 +30,10 @@ oder unter `/register` ein eigenes Konto anlegen.
 | Analytics-Dashboard (KPIs, Trend, Kanäle, beste Zeiten, Top-Posts) | ✅ mit deterministischen Demo-Daten — echte Insights-Zahlen mit der Plattform-Anbindung |
 | Freigabe-Workflow (einreichen, freigeben, Änderungen erbeten) | ✅ echt, inkl. Aktivitätsprotokoll |
 | Kunden-Freigabelinks (`/review/<token>`, ohne Login) | ✅ echt (Einmal-Token, 7 Tage gültig) |
-| KI-Credits (Kauf/Verbrauch, serverseitige Preise) | ✅ persistiert — echte KI in Phase 4 |
-| BYO-API-Keys | ✅ verschlüsselt gespeichert (AES-256-GCM) |
+| KI-Credits (Kauf/Verbrauch, serverseitige Preise) | ✅ persistiert, Abzug nur bei echtem KI-Erfolg |
+| KI-Texte (Captions & Content-Ideen) | ✅ echt über Claude (`claude-opus-4-8`) — Demo-Platzhalter ohne Key |
+| KI-Bilder (1024×1024) | ✅ echt über OpenAI (`gpt-image-1`), landen in der Medienbibliothek — Demo-Platzhalter ohne Key |
+| BYO-API-Keys | ✅ verschlüsselt gespeichert (AES-256-GCM), werden für echte KI-Aufrufe genutzt |
 | Publishing-Engine (Scheduler, Plattformregeln, Retries) | ✅ läuft lokal im Simulationsmodus — echte Plattform-APIs nach App-Review (`PUBLISH_MODE=live`) |
 | Kunden-Freigabeseite `/connect/<token>` | ✅ funktioniert lokal (OAuth-Weiterleitung folgt in Phase 2b) |
 | Stripe (Abo-Checkout, Credit-Kauf, Webhook, Kundenportal) | ✅ Code fertig — aktiviert sich mit `STRIPE_SECRET_KEY` in `.env`, sonst Demo-Modus |

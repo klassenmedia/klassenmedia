@@ -13,7 +13,6 @@ import {
   PostStatus,
   toDateKey,
 } from "@/lib/types";
-import { AI_CAPTION_IDEAS } from "@/lib/demo-data";
 
 const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const MONTHS = [
@@ -33,13 +32,14 @@ interface ComposerState {
 }
 
 export default function PlannerPage() {
-  const { posts, accounts, savePost, deletePost, spendCredits, aiMode } = useStore();
+  const { posts, accounts, savePost, deletePost, generateCaption, aiMode } = useStore();
 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth()); // 0-basiert
   const [composer, setComposer] = useState<ComposerState | null>(null);
   const [aiHint, setAiHint] = useState<string | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -142,18 +142,25 @@ export default function PlannerPage() {
 
   async function suggestCaption() {
     if (!composer) return;
-    const ok = await spendCredits("caption", "Caption-Vorschlag (Planer)");
-    if (!ok) {
-      setAiHint("Nicht genug Credits — Kontingent im KI-Studio aufladen oder eigenen API-Key hinterlegen.");
+    const topic = composer.body.trim();
+    if (!topic) {
+      setAiHint("Schreibe zuerst ein paar Stichworte — daraus macht die KI eine fertige Caption.");
       return;
     }
+    const firstAcc = accounts.find((a) => a.id === composer.accountIds[0]);
+    setAiBusy(true);
+    setAiHint(null);
+    const res = await generateCaption(topic, firstAcc?.platform);
+    setAiBusy(false);
+    if (!res) return; // Fehlermeldung erscheint im globalen Hinweis-Toast
+    setComposer((c) => (c ? { ...c, body: res.text } : c));
     setAiHint(
-      aiMode === "credits"
-        ? "1 Credit verbraucht · Vorschlag eingefügt (echte KI folgt in Phase 4)"
-        : "Über deinen eigenen API-Key (echte KI folgt in Phase 4) · keine Credits verbraucht"
+      res.source === "demo"
+        ? "Demo-Vorschlag eingefügt · echte KI aktiv, sobald ein API-Key im KI-Studio hinterlegt ist."
+        : aiMode === "byo"
+          ? "Mit deinem eigenen API-Key erzeugt · keine Credits verbraucht."
+          : "1 Credit verbraucht · mit Claude erzeugt."
     );
-    const idea = AI_CAPTION_IDEAS[Math.floor(Math.random() * AI_CAPTION_IDEAS.length)];
-    setComposer((c) => (c ? { ...c, body: idea } : c));
   }
 
   async function submit() {
@@ -357,9 +364,12 @@ export default function PlannerPage() {
                 <label className="text-sm font-medium">Text</label>
                 <button
                   onClick={suggestCaption}
-                  className="rounded-lg bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent-fg transition hover:brightness-125"
+                  disabled={aiBusy}
+                  className="rounded-lg bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent-fg transition hover:brightness-125 disabled:opacity-60"
                 >
-                  ✨ KI-Vorschlag {aiMode === "credits" ? "(1 Credit)" : "(eigener Key)"}
+                  {aiBusy
+                    ? "✨ Schreibt …"
+                    : `✨ KI-Vorschlag ${aiMode === "credits" ? "(1 Credit)" : "(eigener Key)"}`}
                 </button>
               </div>
               <textarea

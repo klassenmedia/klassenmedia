@@ -45,6 +45,11 @@ import {
   createReviewLinkAction,
   revokeReviewLinkAction,
 } from "./actions";
+import {
+  generateCaptionAction,
+  generateIdeasAction,
+  generateImageAction,
+} from "./ai-actions";
 
 export interface SavePostInput {
   id?: string;
@@ -69,6 +74,7 @@ interface Store {
   plan: PlanTier;
   aiMode: AiMode;
   hasByoKeys: boolean;
+  ai: WorkspaceBundle["ai"];
   credits: number;
   creditLog: CreditEntry[];
   billing: WorkspaceBundle["billing"];
@@ -89,6 +95,20 @@ interface Store {
   buyCredits: (packageId: "S" | "M" | "L") => Promise<void>;
   openCustomerPortal: () => Promise<void>;
   spendCredits: (kind: "caption" | "image", label: string) => Promise<boolean>;
+  /** Echte KI: eine Caption erzeugen (oder Demo-Platzhalter ohne Key) */
+  generateCaption: (
+    topic: string,
+    platform?: Platform
+  ) => Promise<{ text: string; source: "ai" | "demo" } | null>;
+  /** Echte KI: mehrere Content-Ideen erzeugen */
+  generateIdeas: (
+    topic: string,
+    platform?: Platform
+  ) => Promise<{ ideas: string[]; source: "ai" | "demo" } | null>;
+  /** Echte KI: ein Bild erzeugen (URL oder placeholder:<hue> im Demo-Modus) */
+  generateImage: (
+    prompt: string
+  ) => Promise<{ url: string; source: "ai" | "demo" } | null>;
   toggleCommentLike: (id: string) => Promise<void>;
   replyComment: (id: string, text: string) => Promise<boolean>;
   deleteComment: (id: string) => Promise<void>;
@@ -166,6 +186,51 @@ export function StoreProvider({
         if (!res.ok) setError(res.error ?? "Unbekannter Fehler");
       },
       spendCredits: (kind, label) => apply(spendCreditsAction(kind, label)),
+      generateCaption: async (topic, platform) => {
+        try {
+          const res = await generateCaptionAction({ topic, platform });
+          if (res.bundle) setBundle(res.bundle);
+          if (!res.ok || !res.text) {
+            setError(res.error ?? "KI-Vorschlag fehlgeschlagen");
+            return null;
+          }
+          return { text: res.text, source: res.source ?? "ai" };
+        } catch (e) {
+          console.error(e);
+          setError("Etwas ist schiefgelaufen — bitte noch einmal versuchen.");
+          return null;
+        }
+      },
+      generateIdeas: async (topic, platform) => {
+        try {
+          const res = await generateIdeasAction({ topic, platform });
+          if (res.bundle) setBundle(res.bundle);
+          if (!res.ok || !res.ideas) {
+            setError(res.error ?? "KI-Ideen fehlgeschlagen");
+            return null;
+          }
+          return { ideas: res.ideas, source: res.source ?? "ai" };
+        } catch (e) {
+          console.error(e);
+          setError("Etwas ist schiefgelaufen — bitte noch einmal versuchen.");
+          return null;
+        }
+      },
+      generateImage: async (prompt) => {
+        try {
+          const res = await generateImageAction(prompt);
+          if (res.bundle) setBundle(res.bundle);
+          if (!res.ok || !res.url) {
+            setError(res.error ?? "Bild-Generierung fehlgeschlagen");
+            return null;
+          }
+          return { url: res.url, source: res.source ?? "ai" };
+        } catch (e) {
+          console.error(e);
+          setError("Etwas ist schiefgelaufen — bitte noch einmal versuchen.");
+          return null;
+        }
+      },
       toggleCommentLike: async (id) => void (await apply(toggleCommentLikeAction(id))),
       replyComment: (id, text) => apply(replyCommentAction(id, text)),
       deleteComment: async (id) => void (await apply(deleteCommentAction(id))),

@@ -12,6 +12,7 @@
     "setup": "prisma migrate dev --name init_local && node prisma/seed.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
     "next": "16.2.10",

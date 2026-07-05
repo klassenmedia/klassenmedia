@@ -101,8 +101,11 @@ gebaut wird sie gestaffelt (siehe Roadmap, Abschnitt 8). Statuslegende:
 - 🔲 Gespeicherte Antworten, Sentiment-Markierung, „erledigt"-Status
 
 **3. KI-Unterstützung**
-- 🔶 Caption-Vorschläge (Demo; echte Generierung = Phase 4)
-- 🔲 Bild-/Video-Generierung, Ton pro Marke, Content-Ideen & Monatsplan
+- ✅ Caption-Vorschläge (echt, Claude `claude-opus-4-8`, pro Plattform im Ton angepasst)
+- ✅ Content-Ideen (mehrere Vorschläge zu einem Thema, echt via Claude)
+- ✅ Bild-Generierung (echt, OpenAI `gpt-image-1`, landet in der Medienbibliothek)
+- ✅ BYO-Key- **und** Plattform-Key-Modus; Credit-Abzug nur bei echtem Erfolg, BYO kostet keine Credits
+- 🔲 Video-Generierung, Ton pro Marke, Monatsplan-Generator
 - 🔲 Recycling von Top-Posts, Hashtag-Empfehlungen, Alt-Text automatisch
 
 **4. Analytics & Reporting**
@@ -251,7 +254,7 @@ Details: `app/prisma/schema.prisma`.
 | **1 — Fundament** | SQLite/Prisma (lokal), Auth mit sicheren Sessions, echte Persistenz, Bild-Upload, Inbox (Kommentare) | ✅ fertig (Cloud: Provider-Wechsel auf Postgres) |
 | **2 — Publishing** | Scheduler + Adapter-Pattern + Plattformregeln + Retries + Kunden-Freigabeseite `/connect` — läuft lokal im **Simulationsmodus** | ✅ Engine fertig · 🔲 2b: echte Plattform-APIs (Meta App Review!) |
 | **3 — Billing** | Stripe Checkout (Abo mit 14-Tage-Trial, Credit-Pakete), Webhook, Customer Portal — env-gesteuert mit Demo-Fallback | ✅ Code fertig · 🔲 Stripe-Konto + Livemode |
-| **4 — KI** | Echte Text-/Bild-Generierung, BYO-Key-Nutzung, Credit-Abrechnung gegen echte API-Kosten | 🔲 offen |
+| **4 — KI** | Echte Text-/Bild-Generierung (Claude + OpenAI), BYO-Key-Nutzung, Credit-Abrechnung gegen echte API-Kosten | ✅ fertig |
 | **5 — Launch (v1)** | Name+Domain final, Landingpage live, Onboarding, E-Mails, Rechtstexte, erste zahlende Kunden | 🔲 offen |
 
 **Ab hier: der Weg zum All-in-One (v2).** Reihenfolge bewusst nach Kunden-

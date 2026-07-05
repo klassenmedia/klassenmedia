@@ -1,6 +1,7 @@
 import "server-only";
 
 import { db } from "./db";
+import { imageReady, textReady } from "./ai/generate";
 import {
   ActivityItem,
   AiMode,
@@ -21,6 +22,8 @@ export interface WorkspaceBundle {
   plan: PlanTier;
   aiMode: AiMode;
   hasByoKeys: boolean;
+  /** Ist echte KI einsatzbereit? (BYO-Key hinterlegt bzw. Plattform-Key gesetzt) */
+  ai: { textReady: boolean; imageReady: boolean };
   credits: number;
   billing: {
     stripeConfigured: boolean;
@@ -103,6 +106,7 @@ export async function getWorkspaceBundle(
     plan: workspace.plan as PlanTier,
     aiMode: workspace.aiMode as AiMode,
     hasByoKeys: Boolean(workspace.anthropicKeyEnc || workspace.openaiKeyEnc),
+    ai: { textReady: textReady(workspace), imageReady: imageReady(workspace) },
     credits: workspace.creditBalance,
     billing: {
       stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
