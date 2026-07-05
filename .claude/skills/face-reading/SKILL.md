@@ -31,6 +31,8 @@ Catalog systematically:
 - **Cheeks/cheekbones, jaw, chin**: prominence, width, shape
 - **Ears** (if visible): size, position, lobes
 - **Skin/lines** (if clearly visible): notable lines only; no age or health guessing
+- **Colors**: eye color (watch for colored lenses), natural vs. dyed hair color, zone discolorations (only on unedited photos in neutral light)
+- **Chosen signs**: piercings (position!), visible tattoos, glasses style, beard (note which features it hides), overall styling — read as deliberate self-expression, never as fate signs
 
 ## Step 2 — Interpret through both traditions
 
@@ -44,6 +46,8 @@ Catalog systematically:
 - `references/stirn-ohren-haare.md` — forehead, hairline, ears, hair lexicon
 - `references/linien-falten-leberflecken.md` — lines, wrinkles and the classical mole map
 - `references/westliche-physiognomik.md` — Western tradition system, history, and East–West synthesis rules
+- `references/huter-psycho-physiognomik.md` — Carl Huter's Psycho-Physiognomik: the three Naturelle (Ernährungs-, Bewegungs-, Empfindungsnaturell), mixed types, Spannkraft and expression reading (ALWAYS read — third interpretation system alongside Mian Xiang and the classical Western line)
+- `references/organzonen-farben-zeichen.md` — TCM face organ-zone map (strictly non-medical), skin discolorations, eye color, hair color, and chosen signs (piercings, tattoos, glasses, beard) read as self-expression
 
 The summaries below are the short form; the reference files override and extend them.
 
@@ -86,15 +90,19 @@ Write the document in the user's language, in this structure, then deliver the f
 > Selbstreflexion und Unterhaltung — kein wissenschaftliches Persönlichkeitsgutachten.
 Datum · Foto-Grundlage (Anzahl, Qualität, Einschränkungen)
 
-## 1. Gesamteindruck & Elementtyp     — dominant element + mix, the "headline" of the face
+## 1. Gesamteindruck & Typbestimmung  — dominant element + mix, Zeichenform, Huter-Naturell
+##                                      (primär/sekundär + Spannkraft): three systems, one headline
 ## 2. Die drei Zonen                  — proportions and what they emphasize
-## 3. Merkmal-für-Merkmal             — table: Merkmal | Beobachtung | Deutung (chin.) | Deutung (westl.)
+## 3. Merkmal-für-Merkmal             — table: Merkmal | Beobachtung (+Ausprägung/Konfidenz) |
+##                                      Deutung (chin.) | Deutung (westl./Huter)
 ## 4. Die zwölf Paläste               — the palaces readable from the photo
 ## 5. Persönlichkeitsbild             — synthesized narrative (3–5 paragraphs): core temperament,
 ##                                      strengths, communication & relationship style, work style,
 ##                                      built ONLY from the convergent themes above
 ## 6. Spannungen & Wachstumsfelder    — challenges as tendencies, each with constructive advice
 ## 7. Klassische Glücks-Merkmale      — traditional auspicious signs found (fun, clearly traditional)
+## 7b. Traditionelle Zonen-Beobachtungen — OPTIONAL: TCM organ-zone notes; only with clear signs,
+##                                      good photo quality and the mandatory non-medical disclaimer
 ## 8. Nicht beurteilbar               — features the photo didn't support
 ```
 
