@@ -24,6 +24,7 @@ oder unter `/register` ein eigenes Konto anlegen.
 |---|---|
 | Login/Registrierung, Sessions | ✅ echt (bcrypt, serverseitige Sessions, httpOnly-Cookie) |
 | Posts, Formate, Kalender | ✅ echt (SQLite, überlebt Neustart) |
+| Kanban-Board (Pipeline: Entwurf → In Freigabe → Geplant → Veröffentlicht, Drag-and-drop) | ✅ echt — Verschieben/Freigeben rollen-geprüft |
 | Bild-Upload im Composer | ✅ echt (lokales Dateisystem, `public/uploads/`) |
 | Accounts & Verbindungslinks | ✅ persistiert — echte OAuth-Anbindung folgt in Phase 2 |
 | Inbox (Kommentare liken/antworten/löschen) | ✅ persistiert — Sync mit Plattformen folgt in Phase 2 |

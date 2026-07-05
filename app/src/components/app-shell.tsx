@@ -28,6 +28,17 @@ const NAV = [
     ),
   },
   {
+    href: "/app/board",
+    label: "Board",
+    icon: (
+      <>
+        <rect x="2.5" y="2.5" width="3" height="11" rx="1" stroke="currentColor" strokeWidth="1.4" fill="none" />
+        <rect x="6.5" y="2.5" width="3" height="7.5" rx="1" stroke="currentColor" strokeWidth="1.4" fill="none" />
+        <rect x="10.5" y="2.5" width="3" height="9" rx="1" stroke="currentColor" strokeWidth="1.4" fill="none" />
+      </>
+    ),
+  },
+  {
     href: "/app/analytics",
     label: "Analytics",
     icon: (

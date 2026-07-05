@@ -90,6 +90,9 @@ gebaut wird sie gestaffelt (siehe Roadmap, Abschnitt 8). Statuslegende:
 
 **1. Planen & Veröffentlichen** (das Fundament)
 - ✅ Kalender, Multi-Plattform-Composer, alle Formate, Scheduler mit Retries
+- ✅ Kanban-Board: Content-Pipeline (Entwurf → In Freigabe → Geplant →
+  Veröffentlicht) mit Drag-and-drop; Freigeben/Zurückziehen per Ziehen,
+  rollen-geprüft (ersetzt Trello im Workflow)
 - 🔲 Drag & Drop im Kalender, Wochen-/Listenansicht
 - 🔲 Serien & wiederkehrende Slots („jeden Di 9:00"), Kampagnen mit Farbe
 - 🔲 Beste-Zeit-Vorschläge, Warteschlangen („Queue"-Modus wie Buffer)

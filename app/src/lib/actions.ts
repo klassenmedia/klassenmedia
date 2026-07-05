@@ -202,6 +202,60 @@ export async function deletePostAction(id: string): Promise<ActionResult> {
   return ok();
 }
 
+/**
+ * Kanban-Board: einen Beitrag in eine andere Pipeline-Spalte ziehen.
+ * Spalten = draft (Entwurf) · review (In Freigabe) · scheduled (Geplant).
+ * „Veröffentlicht" ist kein Ziel (das macht nur der Scheduler zur geplanten Zeit).
+ * Berechtigung ist kontextabhängig: einen wartenden Beitrag freizugeben
+ * (→ Geplant) verlangt „approve", alles andere „content".
+ */
+export async function movePostAction(id: string, column: unknown): Promise<ActionResult> {
+  const parsedCol = z.enum(["draft", "review", "scheduled"]).safeParse(column);
+  if (!parsedCol.success) return fail("Ungültige Spalte");
+  const target = parsedCol.data;
+
+  const { workspace, user, role } = await requireWorkspace();
+  const post = await db.post.findFirst({ where: { id, workspaceId: workspace.id } });
+  if (!post) return fail("Beitrag nicht gefunden");
+  if (post.status === "published") {
+    return fail("Veröffentlichte Beiträge können nicht verschoben werden.");
+  }
+
+  // Einen wartenden Beitrag freizugeben ist eine Freigabe-Aktion
+  const isApproval = target === "scheduled" && post.approval === "pending";
+  const neededCap: Capability = isApproval ? "approve" : "content";
+  if (!can(role, neededCap)) {
+    return fail(`Für diesen Schritt fehlt dir die Berechtigung (deine Rolle: ${ROLE_LABELS[role]}).`);
+  }
+
+  if (target === "draft") {
+    await db.post.update({
+      where: { id },
+      data: { status: "draft", approval: "none", approvalNote: null },
+    });
+  } else if (target === "review") {
+    await db.post.update({
+      where: { id },
+      data: { status: "draft", approval: "pending", submittedAt: new Date(), approvalNote: null },
+    });
+    await logActivity(workspace.id, user.name, "submitted", post.body);
+  } else {
+    // → Geplant
+    const approval = isApproval ? "approved" : post.approval === "approved" ? "approved" : "none";
+    await db.post.update({
+      where: { id },
+      data: {
+        status: "scheduled",
+        approval,
+        approvalNote: null,
+        decidedAt: isApproval ? new Date() : post.decidedAt,
+      },
+    });
+    if (isApproval) await logActivity(workspace.id, user.name, "approved", post.body);
+  }
+  return ok();
+}
+
 // ── Social Accounts & Verbindungslinks ───────────────────────────────
 
 const accountSchema = z.object({

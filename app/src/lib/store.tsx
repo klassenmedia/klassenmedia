@@ -36,6 +36,7 @@ import {
   createInviteAction,
   deleteCommentAction,
   deletePostAction,
+  movePostAction,
   removeAccountAction,
   replyCommentAction,
   revokeInviteAction,
@@ -99,6 +100,8 @@ interface Store {
   clearError: () => void;
   savePost: (p: SavePostInput) => Promise<boolean>;
   deletePost: (id: string) => Promise<void>;
+  /** Kanban: Beitrag in eine andere Pipeline-Spalte ziehen */
+  movePost: (id: string, column: "draft" | "review" | "scheduled") => Promise<boolean>;
   addAccount: (a: { platform: Platform; displayName: string; handle: string }) => Promise<void>;
   removeAccount: (id: string) => Promise<void>;
   createInvite: (platform: Platform, clientName: string) => Promise<void>;
@@ -175,6 +178,7 @@ export function StoreProvider({
       clearError: () => setError(null),
       savePost: (p) => apply(savePostAction(p)),
       deletePost: async (id) => void (await apply(deletePostAction(id))),
+      movePost: (id, column) => apply(movePostAction(id, column)),
       addAccount: async (a) => void (await apply(addAccountAction(a))),
       removeAccount: async (id) => void (await apply(removeAccountAction(id))),
       createInvite: async (platform, clientName) =>
