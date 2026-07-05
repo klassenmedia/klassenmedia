@@ -27,6 +27,13 @@ const NAV = [
     ),
   },
   {
+    href: "/app/analytics",
+    label: "Analytics",
+    icon: (
+      <path d="M2.5 13.5V2.5M2.5 13.5h11M5 11V8M8 11V5M11 11V6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    ),
+  },
+  {
     href: "/app/inbox",
     label: "Inbox",
     icon: (

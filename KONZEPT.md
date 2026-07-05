@@ -256,7 +256,7 @@ nachfrage, nicht nach Feature-Liste — jede Phase ist einzeln verkaufbar:
 
 | Phase | Inhalt | Warum in dieser Reihenfolge |
 |---|---|---|
-| **6 — Analytics** | Performance pro Post/Kanal, Dashboards, Kunden-Reports (PDF/White-Label) | Erstes, wonach Agenturen nach dem Planen fragen; nutzt vorhandene Plattform-Verbindungen |
+| **6 — Analytics** | ✅ Dashboard fertig (KPIs, Trend, Kanal-Vergleich, beste Zeiten, Top-Posts) mit Demo-Daten · 🔲 6b: echte Insights-Zahlen (Meta/TikTok/LinkedIn-APIs), PDF-/White-Label-Reports | Erstes, wonach Agenturen nach dem Planen fragen; nutzt vorhandene Plattform-Verbindungen |
 | **7 — Freigabe & Team** | Freigabe-Workflow, Kunden-Freigabelinks, Rollen-UI, Aktivitätsprotokoll | Macht das Agency-Segment (129 €) rund; rein interne Logik, keine neuen Plattform-Reviews |
 | **8 — Engagement-Ausbau** | Zentrale Inbox für DMs + Kommentare aller Kanäle, Team-Zuweisung, gespeicherte Antworten | Baut auf der vorhandenen Inbox auf; braucht erweiterte Plattform-Scopes |
 | **9 — Ads** | „Beitrag bewerben" → Meta-Kampagnen (Marketing API) → Regeln/ROAS → Google Ads | Größter Brocken, höchstes Risiko (fremdes Budget); erst wenn Kern steht und Kunden fragen |

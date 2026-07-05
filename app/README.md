@@ -27,6 +27,7 @@ oder unter `/register` ein eigenes Konto anlegen.
 | Bild-Upload im Composer | ✅ echt (lokales Dateisystem, `public/uploads/`) |
 | Accounts & Verbindungslinks | ✅ persistiert — echte OAuth-Anbindung folgt in Phase 2 |
 | Inbox (Kommentare liken/antworten/löschen) | ✅ persistiert — Sync mit Plattformen folgt in Phase 2 |
+| Analytics-Dashboard (KPIs, Trend, Kanäle, beste Zeiten, Top-Posts) | ✅ mit deterministischen Demo-Daten — echte Insights-Zahlen mit der Plattform-Anbindung |
 | KI-Credits (Kauf/Verbrauch, serverseitige Preise) | ✅ persistiert — echte KI in Phase 4 |
 | BYO-API-Keys | ✅ verschlüsselt gespeichert (AES-256-GCM) |
 | Publishing-Engine (Scheduler, Plattformregeln, Retries) | ✅ läuft lokal im Simulationsmodus — echte Plattform-APIs nach App-Review (`PUBLISH_MODE=live`) |
