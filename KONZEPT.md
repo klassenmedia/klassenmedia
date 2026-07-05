@@ -80,13 +80,60 @@ KI-Funktionen:
 - Content-Ideen & Themenplan („Erstelle mir einen Monatsplan für ein Fitnessstudio")
 - Recycling: alte Top-Posts umschreiben und neu einplanen
 
-### 3.3 Später (Post-MVP)
+### 3.3 Zielbild: Was eine Social-Media-Managerin komplett braucht
 
-- Analytics (Reichweite, Engagement, beste Posting-Zeiten)
-- Team-Rollen & Freigabe-Workflows, Kunden-Freigabelinks
-- Inbox (Kommentare/DMs zentral beantworten)
-- White-Label für Agenturen
-- Mobile App
+Langfristiges Ziel ist ein **All-in-One-Tool**, das die gängigen Einzeltools
+ersetzt — vergleichbar mit adhook, aber mit unserem Keil (unbegrenzte Accounts,
+BYO-KI, fairer Preis). Die folgende Landkarte ist die *vollständige* Vision;
+gebaut wird sie gestaffelt (siehe Roadmap, Abschnitt 8). Statuslegende:
+✅ fertig · 🔶 teilweise · 🔲 geplant.
+
+**1. Planen & Veröffentlichen** (das Fundament)
+- ✅ Kalender, Multi-Plattform-Composer, alle Formate, Scheduler mit Retries
+- 🔲 Drag & Drop im Kalender, Wochen-/Listenansicht
+- 🔲 Serien & wiederkehrende Slots („jeden Di 9:00"), Kampagnen mit Farbe
+- 🔲 Beste-Zeit-Vorschläge, Warteschlangen („Queue"-Modus wie Buffer)
+- 🔲 Link-in-Bio-Seite, First-Comment (Hashtags in den ersten Kommentar)
+
+**2. Engagement & Community** (Inbox)
+- 🔶 Kommentare liken/antworten/löschen (lokal fertig, Plattform-Sync offen)
+- 🔲 Zentrale Inbox für DMs + Kommentare aller Kanäle, Zuweisung im Team
+- 🔲 Gespeicherte Antworten, Sentiment-Markierung, „erledigt"-Status
+
+**3. KI-Unterstützung**
+- 🔶 Caption-Vorschläge (Demo; echte Generierung = Phase 4)
+- 🔲 Bild-/Video-Generierung, Ton pro Marke, Content-Ideen & Monatsplan
+- 🔲 Recycling von Top-Posts, Hashtag-Empfehlungen, Alt-Text automatisch
+
+**4. Analytics & Reporting**
+- 🔲 Organische Performance pro Post/Kanal (Reichweite, Engagement, Wachstum)
+- 🔲 Individuelle Dashboards, PDF-/White-Label-Reports für Kunden
+- 🔲 Wettbewerbs-/Benchmark-Vergleich, beste Posting-Zeiten aus echten Daten
+
+**5. Team & Agentur-Workflow**
+- ✅ Workspaces (ein Mandant pro Kunde), Rollen im Datenmodell
+- 🔲 Freigabe-Workflow (Entwurf → interne Freigabe → Kundenfreigabe → geplant)
+- 🔲 Kunden-Freigabelinks (Kunde sieht Vorschau, gibt frei/kommentiert)
+- 🔲 Aktivitätsprotokoll, Rollen-UI (Editor/Viewer/Admin)
+
+**6. Werbeanzeigen (Ads)** — macht das Tool zum echten adhook-Ersatz
+- 🔲 „Beitrag bewerben" (einfachster Einstieg, aus dem Planer heraus)
+- 🔲 Meta-Kampagnen-Management (Marketing API: Kampagne → Anzeigengruppe → Anzeige)
+- 🔲 Automatische Regeln (WENN CPC > x DANN Budget senken), Ad-Analytics/ROAS
+- 🔲 Google Ads (eigene große Integration, deutlich später)
+
+**7. Assets & Genehmigungen**
+- ✅ Medien-Upload (lokal); 🔲 Cloud-Storage, Medienbibliothek mit Tags/Ordnern
+- 🔲 Canva-/Adobe-Express-Integration, Marken-Kit (Logos, Farben, Schriften)
+
+**8. Betrieb & Vertrauen**
+- ✅ Sichere Auth, verschlüsselte Keys/Tokens, serverseitige Preise
+- 🔲 Benachrichtigungen (E-Mail/Push bei Fehler/Freigabe), Mobile App
+- 🔲 White-Label (eigene Domain/Logo für Agenturen), DSGVO-Exporte, 2FA
+
+> **Strategie-Hinweis:** Nicht alles gleichzeitig. Der Weg zum All-in-One führt
+> über zahlende Kunden — erst Kern + KI + Launch (Phasen 4–5), dann die Säulen,
+> nach denen echte Kunden fragen (meist Analytics und Freigabe-Workflow vor Ads).
 
 ## 4. Preismodell (Entwurf)
 
@@ -202,7 +249,23 @@ Details: `app/prisma/schema.prisma`.
 | **2 — Publishing** | Scheduler + Adapter-Pattern + Plattformregeln + Retries + Kunden-Freigabeseite `/connect` — läuft lokal im **Simulationsmodus** | ✅ Engine fertig · 🔲 2b: echte Plattform-APIs (Meta App Review!) |
 | **3 — Billing** | Stripe Checkout (Abo mit 14-Tage-Trial, Credit-Pakete), Webhook, Customer Portal — env-gesteuert mit Demo-Fallback | ✅ Code fertig · 🔲 Stripe-Konto + Livemode |
 | **4 — KI** | Echte Text-/Bild-Generierung, BYO-Key-Nutzung, Credit-Abrechnung gegen echte API-Kosten | 🔲 offen |
-| **5 — Launch** | Name+Domain final, Landingpage live, Onboarding, E-Mails, Analytics-Basics, Rechtstexte | 🔲 offen |
+| **5 — Launch (v1)** | Name+Domain final, Landingpage live, Onboarding, E-Mails, Rechtstexte, erste zahlende Kunden | 🔲 offen |
+
+**Ab hier: der Weg zum All-in-One (v2).** Reihenfolge bewusst nach Kunden-
+nachfrage, nicht nach Feature-Liste — jede Phase ist einzeln verkaufbar:
+
+| Phase | Inhalt | Warum in dieser Reihenfolge |
+|---|---|---|
+| **6 — Analytics** | Performance pro Post/Kanal, Dashboards, Kunden-Reports (PDF/White-Label) | Erstes, wonach Agenturen nach dem Planen fragen; nutzt vorhandene Plattform-Verbindungen |
+| **7 — Freigabe & Team** | Freigabe-Workflow, Kunden-Freigabelinks, Rollen-UI, Aktivitätsprotokoll | Macht das Agency-Segment (129 €) rund; rein interne Logik, keine neuen Plattform-Reviews |
+| **8 — Engagement-Ausbau** | Zentrale Inbox für DMs + Kommentare aller Kanäle, Team-Zuweisung, gespeicherte Antworten | Baut auf der vorhandenen Inbox auf; braucht erweiterte Plattform-Scopes |
+| **9 — Ads** | „Beitrag bewerben" → Meta-Kampagnen (Marketing API) → Regeln/ROAS → Google Ads | Größter Brocken, höchstes Risiko (fremdes Budget); erst wenn Kern steht und Kunden fragen |
+| **10 — Politur** | Mobile App, Canva/Adobe-Integration, Marken-Kit, 2FA, weitere Plattformen | Abrundung zum vollen adhook-Ersatz |
+
+> Diese Reihenfolge hält dich verkaufsfähig, ohne dich zu verzetteln. Nach jeder
+> Phase gibt es ein neues Verkaufsargument — statt zwei Jahre still zu bauen,
+> bis „alles" da ist. Prioritäten sind verschiebbar, wenn Kundenfeedback etwas
+> anderes zeigt (z. B. Ads vor Analytics, falls dein erstes Segment Ad-lastig ist).
 
 ## 9. Rechtliches (nicht vergessen)
 
