@@ -153,6 +153,7 @@ export interface ConnectionInvite {
   id: string;
   platform: Platform;
   clientName: string;
+  clientId: string | null;
   token: string;
   status: InviteStatus;
   createdAt: string; // dd.mm.yyyy

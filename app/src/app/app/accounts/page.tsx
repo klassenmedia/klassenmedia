@@ -9,10 +9,11 @@ type ConnectMode = "choose" | "self" | "invite" | "invite-done";
 
 export default function AccountsPage() {
   const {
-    accounts,
+    accounts: allAccounts,
     posts,
-    invites,
+    invites: allInvites,
     clients,
+    selectedClientId,
     addAccount,
     removeAccount,
     assignAccount,
@@ -20,6 +21,15 @@ export default function AccountsPage() {
     revokeInvite,
     acceptInvite,
   } = useStore();
+
+  // An den aktiven Kunden-Kontext gebunden
+  const accounts = selectedClientId
+    ? allAccounts.filter((a) => a.clientId === selectedClientId)
+    : allAccounts;
+  const invites = selectedClientId
+    ? allInvites.filter((i) => i.status === "pending" && i.clientId === selectedClientId)
+    : allInvites;
+  const activeClient = clients.find((c) => c.id === selectedClientId) ?? null;
 
   const [mode, setMode] = useState<ConnectMode | null>(null);
   const [platform, setPlatform] = useState<Platform>("instagram");
@@ -54,8 +64,8 @@ export default function AccountsPage() {
     setPlatform("instagram");
     setDisplayName("");
     setHandle("");
-    setClientName("");
-    setDialogClientId("");
+    setClientName(activeClient?.name ?? "");
+    setDialogClientId(selectedClientId ?? "");
     setMode("choose");
   }
 
@@ -113,7 +123,16 @@ export default function AccountsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Accounts</h1>
           <p className="mt-1 text-sm text-muted">
-            Verbinde beliebig viele Profile — <span className="text-accent-fg">ohne Limit</span>, in jedem Tarif.
+            {activeClient ? (
+              <>
+                Accounts von <span className="font-medium text-foreground">{activeClient.name}</span> —{" "}
+                <span className="text-accent-fg">ohne Limit</span>.
+              </>
+            ) : (
+              <>
+                Verbinde beliebig viele Profile — <span className="text-accent-fg">ohne Limit</span>, alles inklusive.
+              </>
+            )}
           </p>
         </div>
         <Button onClick={openDialog}>+ Account verbinden</Button>

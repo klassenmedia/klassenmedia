@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getSessionUser, requireWorkspace } from "@/lib/auth";
 import { getWorkspaceBundle } from "@/lib/data";
 import { AppShell } from "@/components/app-shell";
@@ -19,5 +20,15 @@ export default async function AppLayout({
     role
   );
 
-  return <AppShell initial={bundle}>{children}</AppShell>;
+  // Aktiver Kunden-Kontext aus dem Cookie — nur gültig, wenn er zum Workspace gehört
+  const cookieClient = (await cookies()).get("planbar_client")?.value || null;
+  const initialClientId = bundle.clients.some((c) => c.id === cookieClient)
+    ? cookieClient
+    : null;
+
+  return (
+    <AppShell initial={bundle} initialClientId={initialClientId}>
+      {children}
+    </AppShell>
+  );
 }

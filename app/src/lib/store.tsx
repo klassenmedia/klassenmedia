@@ -167,14 +167,24 @@ const StoreContext = createContext<Store | null>(null);
 
 export function StoreProvider({
   initial,
+  initialClientId = null,
   children,
 }: {
   initial: WorkspaceBundle;
+  initialClientId?: string | null;
   children: React.ReactNode;
 }) {
   const [bundle, setBundle] = useState<WorkspaceBundle>(initial);
   const [error, setError] = useState<string | null>(null);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(initialClientId);
+
+  // Kunden-Kontext übersteht Reloads (Cookie) — fühlt sich an wie ein fester Bereich
+  const setSelectedClient = useCallback((id: string | null) => {
+    setSelectedClientId(id);
+    if (typeof document !== "undefined") {
+      document.cookie = `planbar_client=${id ?? ""}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax`;
+    }
+  }, []);
 
   /** Ergebnis einer Action einarbeiten; liefert ok-Flag zurück */
   const apply = useCallback(async (promise: Promise<ActionResult>): Promise<boolean> => {
@@ -196,7 +206,7 @@ export function StoreProvider({
       error,
       can: (cap) => canDo(bundle.role, cap),
       selectedClientId,
-      setSelectedClient: setSelectedClientId,
+      setSelectedClient,
       clearError: () => setError(null),
       savePost: (p) => apply(savePostAction(p)),
       deletePost: async (id) => void (await apply(deletePostAction(id))),
@@ -308,7 +318,7 @@ export function StoreProvider({
         if (left && typeof window !== "undefined") window.location.assign("/app");
       },
     }),
-    [bundle, error, apply, selectedClientId]
+    [bundle, error, apply, selectedClientId, setSelectedClient]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

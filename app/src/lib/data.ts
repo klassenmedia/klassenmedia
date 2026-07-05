@@ -220,6 +220,7 @@ export async function getWorkspaceBundle(
       id: i.id,
       platform: i.platform as Platform,
       clientName: i.clientName,
+      clientId: i.clientId,
       token: i.token,
       status: i.status as ConnectionInvite["status"],
       createdAt: fmtDate(i.createdAt),

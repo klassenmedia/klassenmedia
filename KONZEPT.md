@@ -117,9 +117,11 @@ gebaut wird sie gestaffelt (siehe Roadmap, Abschnitt 8). Statuslegende:
 - 🔲 Wettbewerbs-/Benchmark-Vergleich, beste Posting-Zeiten aus echten Daten
 
 **5. Team & Agentur-Workflow**
-- ✅ Kunden-Ebene: eine Agentur = ein Arbeitsbereich, darin Kunden als Gruppen
-  mit ihren Accounts; globaler Kunden-Filter über Planer/Board/Inbox; Kunden-
-  Übersicht (wer hat welche Accounts). Skaliert auf 15+ Kunden × mehrere Accounts.
+- ✅ Kunden-Ebene: eine Agentur = ein Arbeitsbereich (ein Abo), darin Kunden als
+  Gruppen mit ihren Accounts. Prominenter **Kunden-Kontext-Umschalter** oben:
+  Kunde wählen → Planer, Board, Inbox, Accounts zeigen NUR ihn, klar angezeigt
+  („Du arbeitest bei Kunde X"); Kontext übersteht Reloads (Cookie). Plus „Alle
+  Kunden"-Übersicht. Skaliert sauber auf 15+ Kunden × mehrere Accounts.
 - ✅ Workspaces (Agentur-Konto), Nutzer in mehreren Workspaces, Wechsler
 - ✅ Team-Mitglieder per Link einladen; Rollen owner/admin/editor/viewer mit
   serverseitig erzwungenen Rechten (`can(role, capability)`); Rolle ändern,
@@ -149,24 +151,24 @@ gebaut wird sie gestaffelt (siehe Roadmap, Abschnitt 8). Statuslegende:
 > über zahlende Kunden — erst Kern + KI + Launch (Phasen 4–5), dann die Säulen,
 > nach denen echte Kunden fragen (meist Analytics und Freigabe-Workflow vor Ads).
 
-## 4. Preismodell (Entwurf)
+## 4. Preismodell
 
-Alle Tarife: **unbegrenzte Social Accounts**. Differenzierung über Workspaces,
-Teammitglieder und inkludierte KI-Credits.
+**Ein Plan für alles — „Komplett", 79 €/Monat, keine Limits, keine Staffelung.**
+Bewusste Entscheidung: ein einfaches, ehrliches Angebot statt Tarif-Dschungel.
 
-| | **Starter** 19 €/Monat | **Pro** 49 €/Monat | **Agency** 129 €/Monat |
-|---|---|---|---|
-| Workspaces | 1 | 3 | unbegrenzt |
-| Teammitglieder | 1 | 5 | unbegrenzt |
-| Social Accounts | ∞ | ∞ | ∞ |
-| Planungshorizont | ∞ | ∞ | ∞ |
-| KI-Credits inklusive / Monat | 100 | 500 | 2.000 |
-| BYO-API-Key | ✓ | ✓ | ✓ |
-| Freigabe-Workflow | – | ✓ | ✓ |
-| White-Label | – | – | ✓ |
+| Komplett — 79 €/Monat |
+|---|
+| Unbegrenzte Kunden |
+| Unbegrenzte Social Accounts |
+| Unbegrenzter Planungshorizont |
+| Alle Formate (Text, Bild, Video, Karussell, Story) |
+| Kalender & Kanban-Board |
+| Team & Rollen |
+| Freigabe-Workflow + Kunden-Freigabelinks |
+| Inbox, Analytics, KI für Texte & Bilder inklusive |
 
-Jährliche Zahlung: 2 Monate geschenkt (≈ −17 %). 14 Tage kostenlos testen,
-ohne Kreditkarte.
+BYO-API-Key optional (Kunde nutzt eigene KI-Kosten). Jährliche Zahlung
+(2 Monate geschenkt) und 14-Tage-Trial sind für den Launch vorbereitet.
 
 ## 5. Monetarisierung & Billing
 

@@ -25,7 +25,7 @@ oder unter `/register` ein eigenes Konto anlegen.
 | Login/Registrierung, Sessions | ✅ echt (bcrypt, serverseitige Sessions, httpOnly-Cookie) |
 | Posts, Formate, Kalender | ✅ echt (SQLite, überlebt Neustart) |
 | Kanban-Board (Pipeline: Entwurf → In Freigabe → Geplant → Veröffentlicht, Drag-and-drop) | ✅ echt — Verschieben/Freigeben rollen-geprüft |
-| Kunden-Ebene (Accounts je Kunde gruppieren, globaler Kunden-Filter über Planer/Board/Inbox) | ✅ echt — eine Agentur, viele Kunden auf einen Blick |
+| Kunden-Ebene + Kontext-Umschalter (Kunde wählen → alles zeigt nur ihn, übersteht Reloads) | ✅ echt — eine Agentur, ein Abo, viele Kunden sauber getrennt |
 | Bild-Upload im Composer | ✅ echt (lokales Dateisystem, `public/uploads/`) |
 | Accounts & Verbindungslinks | ✅ persistiert — echte OAuth-Anbindung folgt in Phase 2 |
 | Inbox (Kommentare liken/antworten/löschen) | ✅ persistiert — Sync mit Plattformen folgt in Phase 2 |

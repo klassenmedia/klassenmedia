@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { StoreProvider, useStore } from "@/lib/store";
 import type { WorkspaceBundle } from "@/lib/data";
-import { PLANS } from "@/lib/types";
 import { ROLE_LABELS } from "@/lib/permissions";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { logout } from "@/lib/auth-actions";
@@ -128,7 +128,6 @@ function ErrorToast() {
 function Sidebar() {
   const pathname = usePathname();
   const {
-    plan,
     credits,
     user,
     comments,
@@ -137,9 +136,6 @@ function Sidebar() {
     workspaceId,
     workspaces,
     switchWorkspace,
-    clients,
-    selectedClientId,
-    setSelectedClient,
   } = useStore();
   const openComments = comments.length;
   const openApprovals = posts.filter((p) => p.approval === "pending").length;
@@ -185,28 +181,6 @@ function Sidebar() {
         </div>
       </div>
 
-      {/* Kunden-Filter — wirkt auf Planer, Board, Inbox */}
-      {clients.length > 0 && (
-        <div className="px-3 pb-2">
-          <label className="mb-1 block px-1 text-[11px] font-medium uppercase tracking-wider text-muted">
-            Kunde
-          </label>
-          <select
-            value={selectedClientId ?? ""}
-            onChange={(e) => setSelectedClient(e.target.value || null)}
-            aria-label="Nach Kunde filtern"
-            className="w-full rounded-lg border border-line bg-surface px-2 py-1.5 text-sm"
-          >
-            <option value="">Alle Kunden</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
       <nav className="flex flex-1 flex-col gap-1 px-3">
         {NAV.map((item) => {
           const active =
@@ -237,8 +211,8 @@ function Sidebar() {
 
       <div className="m-3 rounded-xl border border-line bg-surface-2 p-4 text-xs">
         <div className="flex items-center justify-between">
-          <span className="text-muted">Tarif</span>
-          <span className="font-semibold text-accent-fg">{PLANS[plan].name}</span>
+          <span className="text-muted">Plan</span>
+          <span className="font-semibold text-accent-fg">Komplett</span>
         </div>
         <div className="mt-2 flex items-center justify-between">
           <span className="text-muted">KI-Credits</span>
@@ -270,18 +244,108 @@ function Sidebar() {
   );
 }
 
+/** Prominenter Kunden-Kontext: „Du arbeitest bei Kunde X" — scoped die ganze App. */
+function ClientBar() {
+  const { clients, selectedClientId, setSelectedClient } = useStore();
+  const [open, setOpen] = useState(false);
+  const active = clients.find((c) => c.id === selectedClientId) ?? null;
+
+  if (clients.length === 0) {
+    return (
+      <div className="flex items-center gap-3 border-b border-line bg-surface px-8 py-3 text-sm">
+        <span className="text-muted">Noch keine Kunden angelegt.</span>
+        <Link href="/app/clients" className="font-medium text-accent-fg hover:underline">
+          + Ersten Kunden anlegen
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-surface/95 px-8 py-2.5 backdrop-blur">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Kunde</span>
+      <div className="relative">
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-1.5 text-sm font-semibold transition hover:border-accent/40"
+        >
+          {active ? (
+            <>
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: active.color }} />
+              {active.name}
+            </>
+          ) : (
+            "Alle Kunden"
+          )}
+          <svg width="12" height="12" viewBox="0 0 12 12" className="text-muted">
+            <path d="M3 4.5L6 7.5l3-3" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+            <div className="absolute left-0 top-full z-20 mt-1 max-h-80 w-64 overflow-auto rounded-xl border border-line bg-surface p-1 shadow-xl">
+              <button
+                onClick={() => {
+                  setSelectedClient(null);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm ${
+                  !selectedClientId ? "bg-accent-soft text-accent-fg" : "hover:bg-surface-2"
+                }`}
+              >
+                Alle Kunden <span className="ml-auto text-xs text-muted">Übersicht</span>
+              </button>
+              {clients.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => {
+                    setSelectedClient(c.id);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm ${
+                    selectedClientId === c.id ? "bg-accent-soft text-accent-fg" : "hover:bg-surface-2"
+                  }`}
+                >
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.color }} />
+                  {c.name}
+                </button>
+              ))}
+              <Link
+                href="/app/clients"
+                onClick={() => setOpen(false)}
+                className="mt-1 block border-t border-line px-3 py-2 text-xs text-muted transition hover:text-foreground"
+              >
+                + Kunde anlegen / verwalten
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
+      <span className="ml-auto text-xs text-muted">
+        {active ? `Du arbeitest nur bei „${active.name}“` : "Übersicht über alle Kunden"}
+      </span>
+    </div>
+  );
+}
+
 export function AppShell({
   initial,
+  initialClientId,
   children,
 }: {
   initial: WorkspaceBundle;
+  initialClientId?: string | null;
   children: React.ReactNode;
 }) {
   return (
-    <StoreProvider initial={initial}>
+    <StoreProvider initial={initial} initialClientId={initialClientId}>
       <div className="flex min-h-screen">
         <Sidebar />
-        <main className="min-w-0 flex-1 px-8 py-8">{children}</main>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <ClientBar />
+          <main className="min-w-0 flex-1 px-8 py-8">{children}</main>
+        </div>
       </div>
       <ErrorToast />
     </StoreProvider>
