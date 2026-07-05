@@ -6,6 +6,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import {
+  ActivityItem,
   AiMode,
   CommentItem,
   ConnectionInvite,
@@ -15,7 +16,7 @@ import {
   PlanTier,
   Post,
   PostFormat,
-  PostStatus,
+  ReviewLinkItem,
   SocialAccount,
 } from "./types";
 import type { WorkspaceBundle } from "./data";
@@ -39,6 +40,10 @@ import {
   setAiModeAction,
   spendCreditsAction,
   toggleCommentLikeAction,
+  approvePostAction,
+  requestChangesAction,
+  createReviewLinkAction,
+  revokeReviewLinkAction,
 } from "./actions";
 
 export interface SavePostInput {
@@ -47,7 +52,7 @@ export interface SavePostInput {
   date: string;
   time: string;
   accountIds: string[];
-  status: PostStatus;
+  status: "draft" | "scheduled" | "review";
   format: PostFormat;
   media: MediaItem[];
 }
@@ -59,6 +64,8 @@ interface Store {
   posts: Post[];
   invites: ConnectionInvite[];
   comments: CommentItem[];
+  reviewLinks: ReviewLinkItem[];
+  activity: ActivityItem[];
   plan: PlanTier;
   aiMode: AiMode;
   hasByoKeys: boolean;
@@ -85,6 +92,10 @@ interface Store {
   toggleCommentLike: (id: string) => Promise<void>;
   replyComment: (id: string, text: string) => Promise<boolean>;
   deleteComment: (id: string) => Promise<void>;
+  approvePost: (id: string) => Promise<void>;
+  requestChanges: (id: string, note: string) => Promise<boolean>;
+  createReviewLink: (clientName: string) => Promise<void>;
+  revokeReviewLink: (id: string) => Promise<void>;
 }
 
 const StoreContext = createContext<Store | null>(null);
@@ -158,6 +169,10 @@ export function StoreProvider({
       toggleCommentLike: async (id) => void (await apply(toggleCommentLikeAction(id))),
       replyComment: (id, text) => apply(replyCommentAction(id, text)),
       deleteComment: async (id) => void (await apply(deleteCommentAction(id))),
+      approvePost: async (id) => void (await apply(approvePostAction(id))),
+      requestChanges: (id, note) => apply(requestChangesAction(id, note)),
+      createReviewLink: async (name) => void (await apply(createReviewLinkAction(name))),
+      revokeReviewLink: async (id) => void (await apply(revokeReviewLinkAction(id))),
     }),
     [bundle, error, apply]
   );

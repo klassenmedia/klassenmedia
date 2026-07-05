@@ -34,6 +34,13 @@ const NAV = [
     ),
   },
   {
+    href: "/app/approvals",
+    label: "Freigaben",
+    icon: (
+      <path d="M2.5 8.5l3 3 8-8M6.5 13.5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    ),
+  },
+  {
     href: "/app/inbox",
     label: "Inbox",
     icon: (
@@ -87,8 +94,13 @@ function ErrorToast() {
 
 function Sidebar() {
   const pathname = usePathname();
-  const { plan, credits, user, comments } = useStore();
+  const { plan, credits, user, comments, posts } = useStore();
   const openComments = comments.length;
+  const openApprovals = posts.filter((p) => p.approval === "pending").length;
+  const badges: Record<string, number> = {
+    "/app/inbox": openComments,
+    "/app/approvals": openApprovals,
+  };
 
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-surface">
@@ -120,9 +132,9 @@ function Sidebar() {
             >
               <svg width="16" height="16" viewBox="0 0 16 16">{item.icon}</svg>
               {item.label}
-              {item.href === "/app/inbox" && openComments > 0 && (
+              {badges[item.href] > 0 && (
                 <span className="ml-auto rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent-fg">
-                  {openComments}
+                  {badges[item.href]}
                 </span>
               )}
             </Link>

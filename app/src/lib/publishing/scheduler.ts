@@ -5,6 +5,7 @@
 
 import { db } from "../db";
 import { getAdapter } from "./adapters";
+import { logActivity } from "../activity";
 
 const MAX_ATTEMPTS = 3;
 const PLAN_CREDITS: Record<string, number> = { starter: 100, pro: 500, agency: 2000 };
@@ -64,6 +65,7 @@ export async function processDuePosts(): Promise<void> {
 
     if (!anyFailed) {
       await db.post.update({ where: { id: post.id }, data: { status: "published" } });
+      await logActivity(post.workspaceId, "System", "published", post.body);
       continue;
     }
 

@@ -13,6 +13,7 @@ import { db } from "./db";
 import { requireWorkspace } from "./auth";
 import { encrypt } from "./crypto";
 import { getWorkspaceBundle, WorkspaceBundle } from "./data";
+import { logActivity } from "./activity";
 
 export type ActionResult = {
   ok: boolean;
@@ -55,7 +56,8 @@ const postSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().regex(/^\d{2}:\d{2}$/),
   accountIds: z.array(z.string()).min(1, "Mindestens ein Account"),
-  status: z.enum(["draft", "scheduled"]),
+  // "review" = zur Freigabe einreichen (wird intern als Entwurf + approval=pending abgelegt)
+  status: z.enum(["draft", "scheduled", "review"]),
   format: z.enum(["text", "image", "video", "carousel", "story"]),
   media: z
     .array(z.object({ id: z.string().nullable(), url: z.string().max(500) }))
@@ -63,7 +65,8 @@ const postSchema = z.object({
 });
 
 export async function savePostAction(input: unknown): Promise<ActionResult> {
-  const { workspace } = await requireWorkspace();
+  const { workspace, user } = await requireWorkspace();
+  const actorName = user.name;
   const parsed = postSchema.safeParse(input);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   const data = parsed.data;
@@ -79,6 +82,11 @@ export async function savePostAction(input: unknown): Promise<ActionResult> {
   const scheduledAt = new Date(`${data.date}T${data.time}:00`);
   if (isNaN(scheduledAt.getTime())) return fail("Ungültiger Termin");
 
+  // "review" -> Entwurf, der auf Freigabe wartet
+  const isReview = data.status === "review";
+  const dbStatus = isReview ? "draft" : data.status;
+  const approval = isReview ? "pending" : "none";
+
   let postId = data.id;
   if (postId) {
     const existing = await db.post.findFirst({
@@ -91,7 +99,10 @@ export async function savePostAction(input: unknown): Promise<ActionResult> {
         body: data.body,
         format: data.format,
         scheduledAt,
-        status: data.status,
+        status: dbStatus,
+        approval,
+        approvalNote: isReview ? null : existing.approvalNote,
+        submittedAt: isReview ? new Date() : existing.submittedAt,
         accounts: {
           deleteMany: {},
           create: data.accountIds.map((accountId) => ({ accountId })),
@@ -105,11 +116,17 @@ export async function savePostAction(input: unknown): Promise<ActionResult> {
         body: data.body,
         format: data.format,
         scheduledAt,
-        status: data.status,
+        status: dbStatus,
+        approval,
+        submittedAt: isReview ? new Date() : null,
         accounts: { create: data.accountIds.map((accountId) => ({ accountId })) },
       },
     });
     postId = created.id;
+  }
+
+  if (isReview) {
+    await logActivity(workspace.id, actorName, "submitted", data.body);
   }
 
   // Medien synchronisieren: vorhandene Assets anhängen, Platzhalter anlegen,
@@ -362,6 +379,74 @@ export async function deleteCommentAction(id: string): Promise<ActionResult> {
   const { workspace } = await requireWorkspace();
   // Phase 2: Kommentar zusätzlich über die Plattform-API löschen/verbergen
   await db.comment.deleteMany({ where: { id, workspaceId: workspace.id } });
+  return ok();
+}
+
+// ── Freigabe-Workflow (Phase 7) ───────────────────────────────────────
+
+/** Beitrag freigeben → wird geplant und vom Scheduler veröffentlicht. */
+export async function approvePostAction(id: string): Promise<ActionResult> {
+  const { workspace, user } = await requireWorkspace();
+  const post = await db.post.findFirst({
+    where: { id, workspaceId: workspace.id, approval: "pending" },
+  });
+  if (!post) return fail("Beitrag nicht gefunden oder nicht in Freigabe");
+  await db.post.update({
+    where: { id },
+    data: { approval: "approved", status: "scheduled", decidedAt: new Date(), approvalNote: null },
+  });
+  await logActivity(workspace.id, user.name, "approved", post.body);
+  return ok();
+}
+
+const noteSchema = z.string().trim().max(1000).optional();
+
+/** Änderungen erbeten → zurück an den Ersteller, mit optionalem Kommentar. */
+export async function requestChangesAction(
+  id: string,
+  note: unknown
+): Promise<ActionResult> {
+  const { workspace, user } = await requireWorkspace();
+  const parsedNote = noteSchema.safeParse(note);
+  if (!parsedNote.success) return fail("Kommentar zu lang");
+  const post = await db.post.findFirst({
+    where: { id, workspaceId: workspace.id, approval: "pending" },
+  });
+  if (!post) return fail("Beitrag nicht gefunden oder nicht in Freigabe");
+  await db.post.update({
+    where: { id },
+    data: {
+      approval: "changes_requested",
+      status: "draft",
+      decidedAt: new Date(),
+      approvalNote: parsedNote.data || null,
+    },
+  });
+  await logActivity(workspace.id, user.name, "changes_requested", post.body);
+  return ok();
+}
+
+const clientNameSchema = z.string().trim().min(1).max(100);
+
+/** Kunden-Freigabelink erstellen (7 Tage gültig). */
+export async function createReviewLinkAction(clientName: unknown): Promise<ActionResult> {
+  const { workspace } = await requireWorkspace();
+  const parsed = clientNameSchema.safeParse(clientName);
+  if (!parsed.success) return fail("Bitte einen Kundennamen eingeben");
+  await db.reviewLink.create({
+    data: {
+      workspaceId: workspace.id,
+      clientName: parsed.data,
+      token: randomBytes(16).toString("hex"),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    },
+  });
+  return ok();
+}
+
+export async function revokeReviewLinkAction(id: string): Promise<ActionResult> {
+  const { workspace } = await requireWorkspace();
+  await db.reviewLink.deleteMany({ where: { id, workspaceId: workspace.id } });
   return ok();
 }
 

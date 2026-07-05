@@ -95,7 +95,29 @@ async function main() {
   await post(CAPTIONS.tutorial, 3, 16, 0, [yt], "scheduled", "video", [150]);
   await post(CAPTIONS.job, 5, 8, 30, [li, fb], "scheduled", "text", []);
   await post(CAPTIONS.story, 8, 11, 15, [ig], "scheduled", "story", [330]);
-  await post(CAPTIONS.karussell, 12, 9, 0, [ig, tt, fb], "draft", "carousel", [45, 90, 200]);
+  // ein Beitrag wartet auf Freigabe (Phase-7-Demo)
+  const p8 = await post(CAPTIONS.karussell, 12, 9, 0, [ig, tt, fb], "draft", "carousel", [45, 90, 200]);
+  await db.post.update({
+    where: { id: p8.id },
+    data: { approval: "pending", submittedAt: new Date() },
+  });
+
+  await db.reviewLink.create({
+    data: {
+      workspaceId: workspace.id,
+      clientName: "Bäckerei Berger",
+      token: "reviewdemo0001abcd",
+      expiresAt: at(7, 12),
+    },
+  });
+
+  await db.activityLog.createMany({
+    data: [
+      { workspaceId: workspace.id, actor: "Andreas", action: "submitted", target: CAPTIONS.karussell },
+      { workspaceId: workspace.id, actor: "System", action: "published", target: CAPTIONS.bts },
+      { workspaceId: workspace.id, actor: "Andreas", action: "connected", target: "Instagram · @klassenmedia" },
+    ],
+  });
 
   await db.comment.createMany({
     data: [

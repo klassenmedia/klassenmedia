@@ -2,13 +2,16 @@ import "server-only";
 
 import { db } from "./db";
 import {
+  ActivityItem,
   AiMode,
+  ApprovalStatus,
   CommentItem,
   ConnectionInvite,
   CreditEntry,
   Platform,
   PlanTier,
   Post,
+  ReviewLinkItem,
   SocialAccount,
 } from "./types";
 
@@ -29,6 +32,8 @@ export interface WorkspaceBundle {
   invites: ConnectionInvite[];
   creditLog: CreditEntry[];
   comments: CommentItem[];
+  reviewLinks: ReviewLinkItem[];
+  activity: ActivityItem[];
 }
 
 function fmtDate(d: Date): string {
@@ -48,7 +53,8 @@ export async function getWorkspaceBundle(
   workspaceId: string,
   user: { name: string; email: string }
 ): Promise<WorkspaceBundle> {
-  const [workspace, accounts, posts, invites, creditLog, comments] = await Promise.all([
+  const [workspace, accounts, posts, invites, creditLog, comments, reviewLinks, activity] =
+    await Promise.all([
     db.workspace.findUniqueOrThrow({ where: { id: workspaceId } }),
     db.socialAccount.findMany({
       where: { workspaceId },
@@ -79,6 +85,15 @@ export async function getWorkspaceBundle(
       },
       orderBy: { createdAt: "desc" },
       take: 100,
+    }),
+    db.reviewLink.findMany({
+      where: { workspaceId, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: "desc" },
+    }),
+    db.activityLog.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: "desc" },
+      take: 40,
     }),
   ]);
 
@@ -114,6 +129,8 @@ export async function getWorkspaceBundle(
       publishErrors: p.accounts
         .filter((pa) => pa.error && !pa.publishedAt)
         .map((pa) => `${pa.account.handle}: ${pa.error}`),
+      approval: p.approval as ApprovalStatus,
+      approvalNote: p.approvalNote,
     })),
     invites: invites.map((i) => ({
       id: i.id,
@@ -149,5 +166,18 @@ export async function getWorkspaceBundle(
         })),
       };
     }),
+    reviewLinks: reviewLinks.map((r) => ({
+      id: r.id,
+      clientName: r.clientName,
+      token: r.token,
+      createdAt: fmtDate(r.createdAt),
+    })),
+    activity: activity.map((a) => ({
+      id: a.id,
+      actor: a.actor,
+      action: a.action,
+      target: a.target,
+      when: fmtDate(a.createdAt),
+    })),
   };
 }

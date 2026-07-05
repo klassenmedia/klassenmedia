@@ -27,7 +27,7 @@ interface ComposerState {
   date: string;
   time: string;
   accountIds: string[];
-  status: PostStatus;
+  status: PostStatus | "review";
   format: PostFormat;
   media: MediaItem[];
 }
@@ -165,7 +165,12 @@ export default function PlannerPage() {
       date: composer.date,
       time: composer.time,
       accountIds: composer.accountIds,
-      status: composer.status === "draft" ? "draft" : "scheduled",
+      status:
+        composer.status === "review"
+          ? "review"
+          : composer.status === "draft"
+            ? "draft"
+            : "scheduled",
       format: composer.format,
       media: composer.media,
     });
@@ -302,6 +307,33 @@ export default function PlannerPage() {
             {composer.id &&
               (() => {
                 const original = posts.find((p) => p.id === composer.id);
+                if (!original) return null;
+                if (original.approval === "pending") {
+                  return (
+                    <div className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
+                      Dieser Beitrag wartet auf Freigabe — Freigeben/Ablehnen im Menüpunkt
+                      „Freigaben“ oder über den Kunden-Freigabelink.
+                    </div>
+                  );
+                }
+                if (original.approval === "changes_requested") {
+                  return (
+                    <div className="rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm">
+                      <div className="font-medium text-danger">Änderungen erbeten</div>
+                      {original.approvalNote && (
+                        <p className="mt-1 text-danger/90">„{original.approvalNote}“</p>
+                      )}
+                      <p className="mt-1.5 text-xs text-muted">
+                        Passe den Beitrag an und reiche ihn erneut zur Freigabe ein.
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+            {composer.id &&
+              (() => {
+                const original = posts.find((p) => p.id === composer.id);
                 if (!original || original.publishErrors.length === 0) return null;
                 return (
                   <div className="rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm">
@@ -400,14 +432,15 @@ export default function PlannerPage() {
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Status</label>
                 <select
-                  value={composer.status}
+                  value={composer.status === "review" ? "review" : composer.status}
                   onChange={(e) =>
-                    setComposer({ ...composer, status: e.target.value as PostStatus })
+                    setComposer({ ...composer, status: e.target.value as PostStatus | "review" })
                   }
                   className={inputCls}
                 >
                   <option value="scheduled">Geplant</option>
                   <option value="draft">Entwurf</option>
+                  <option value="review">Zur Freigabe einreichen</option>
                 </select>
               </div>
             </div>
@@ -505,7 +538,9 @@ export default function PlannerPage() {
                 )}
               </div>
               <div className="flex items-center gap-3">
-                {composer.id && <StatusBadge status={composer.status} />}
+                {composer.id && composer.status !== "review" && (
+                  <StatusBadge status={composer.status} />
+                )}
                 <Button variant="ghost" onClick={() => setComposer(null)}>
                   Abbrechen
                 </Button>
@@ -513,7 +548,13 @@ export default function PlannerPage() {
                   onClick={submit}
                   disabled={saving || !composer.body.trim() || composer.accountIds.length === 0}
                 >
-                  {saving ? "Speichert …" : composer.id ? "Speichern" : "Planen"}
+                  {saving
+                    ? "Speichert …"
+                    : composer.status === "review"
+                      ? "Einreichen"
+                      : composer.id
+                        ? "Speichern"
+                        : "Planen"}
                 </Button>
               </div>
             </div>

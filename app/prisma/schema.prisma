@@ -47,6 +47,8 @@ model Workspace {
   connectionInvites  ConnectionInvite[]
   posts              Post[]
   mediaAssets        MediaAsset[]
+  reviewLinks        ReviewLink[]
+  activityLogs       ActivityLog[]
   aiMode             String              @default("credits") // credits | byo
   // BYO-Keys werden NIE im Klartext gespeichert (AES-256-GCM, Schlüssel in ENV)
   anthropicKeyEnc    String?
@@ -117,7 +119,12 @@ model Post {
   body        String
   format      String        @default("image") // text | image | video | carousel | story
   scheduledAt DateTime
-  status      String        @default("scheduled") // draft | scheduled | published | failed
+  status      String        @default("scheduled") // draft | scheduled | publishing | published | failed
+  // Freigabe-Workflow (Phase 7): none = keine Freigabe nötig
+  approval     String        @default("none") // none | pending | approved | changes_requested
+  approvalNote String? // Kommentar des Freigebers bei "Änderungen erbeten"
+  submittedAt  DateTime?
+  decidedAt    DateTime?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   accounts    PostAccount[]
@@ -126,6 +133,34 @@ model Post {
 
   @@index([workspaceId, scheduledAt])
   @@index([status, scheduledAt]) // Scheduler-Query (Phase 2): fällige Posts
+  @@index([workspaceId, approval])
+}
+
+// Kunden-Freigabelink: Kunde sieht die zur Freigabe eingereichten Posts und
+// gibt sie frei / bittet um Änderungen — ohne eigenes Konto (Token = Zugang).
+model ReviewLink {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  token       String    @unique
+  clientName  String
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+}
+
+// Aktivitätsprotokoll: wer hat wann was getan (Audit + Nachvollziehbarkeit)
+model ActivityLog {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  actor       String // "Andreas" oder "Kunde: Bäckerei Berger"
+  action      String // created | submitted | approved | changes_requested | published | connected
+  target      String? // Kurzbeschreibung, z. B. Post-Textauszug
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
 }
 
 // Verknüpfung Post ↔ SocialAccount inkl. Publishing-Ergebnis pro Ziel

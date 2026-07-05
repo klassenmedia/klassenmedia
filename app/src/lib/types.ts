@@ -76,7 +76,42 @@ export interface Post {
   media: MediaItem[];
   /** Publishing-Fehler pro Ziel-Account, z. B. "@handle: Text zu lang" */
   publishErrors: string[];
+  approval: ApprovalStatus;
+  approvalNote: string | null;
 }
+
+export type ApprovalStatus = "none" | "pending" | "approved" | "changes_requested";
+
+export const APPROVAL_LABELS: Record<ApprovalStatus, string> = {
+  none: "",
+  pending: "Wartet auf Freigabe",
+  approved: "Freigegeben",
+  changes_requested: "Änderungen erbeten",
+};
+
+export interface ReviewLinkItem {
+  id: string;
+  clientName: string;
+  token: string;
+  createdAt: string;
+}
+
+export interface ActivityItem {
+  id: string;
+  actor: string;
+  action: string;
+  target: string | null;
+  when: string;
+}
+
+export const ACTIVITY_LABELS: Record<string, string> = {
+  created: "hat einen Beitrag erstellt",
+  submitted: "hat einen Beitrag zur Freigabe eingereicht",
+  approved: "hat einen Beitrag freigegeben",
+  changes_requested: "hat Änderungen erbeten",
+  published: "Beitrag wurde veröffentlicht",
+  connected: "hat einen Account verbunden",
+};
 
 export interface CommentReply {
   id: string;
