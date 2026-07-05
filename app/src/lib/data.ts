@@ -2,6 +2,7 @@ import "server-only";
 
 import { db } from "./db";
 import { imageReady, textReady } from "./ai/generate";
+import type { Role } from "./permissions";
 import {
   ActivityItem,
   AiMode,
@@ -14,11 +15,23 @@ import {
   Post,
   ReviewLinkItem,
   SocialAccount,
+  TeamInviteItem,
+  TeamMember,
+  WorkspaceSummary,
 } from "./types";
 
 export interface WorkspaceBundle {
   user: { name: string; email: string };
+  workspaceId: string;
   workspaceName: string;
+  /** Rolle des aktuellen Nutzers im aktiven Workspace */
+  role: Role;
+  /** Alle Workspaces des Nutzers (für den Wechsler) */
+  workspaces: WorkspaceSummary[];
+  /** Mitglieder des aktiven Workspace */
+  members: TeamMember[];
+  /** Offene Team-Einladungen */
+  teamInvites: TeamInviteItem[];
   plan: PlanTier;
   aiMode: AiMode;
   hasByoKeys: boolean;
@@ -54,10 +67,22 @@ function timeKey(d: Date): string {
 /** Lädt alles, was die App-Oberfläche braucht — immer workspace-gescoped. */
 export async function getWorkspaceBundle(
   workspaceId: string,
-  user: { name: string; email: string }
+  user: { id: string; name: string; email: string },
+  role: Role
 ): Promise<WorkspaceBundle> {
-  const [workspace, accounts, posts, invites, creditLog, comments, reviewLinks, activity] =
-    await Promise.all([
+  const [
+    workspace,
+    accounts,
+    posts,
+    invites,
+    creditLog,
+    comments,
+    reviewLinks,
+    activity,
+    memberRows,
+    teamInviteRows,
+    myMemberships,
+  ] = await Promise.all([
     db.workspace.findUniqueOrThrow({ where: { id: workspaceId } }),
     db.socialAccount.findMany({
       where: { workspaceId },
@@ -98,11 +123,49 @@ export async function getWorkspaceBundle(
       orderBy: { createdAt: "desc" },
       take: 40,
     }),
+    db.workspaceMember.findMany({
+      where: { workspaceId },
+      include: { user: true },
+      orderBy: { createdAt: "asc" },
+    }),
+    db.teamInvite.findMany({
+      where: { workspaceId, status: "pending", expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: "desc" },
+    }),
+    db.workspaceMember.findMany({
+      where: { userId: user.id },
+      include: { workspace: true },
+      orderBy: { createdAt: "asc" },
+    }),
   ]);
 
   return {
-    user,
+    user: { name: user.name, email: user.email },
+    workspaceId: workspace.id,
     workspaceName: workspace.name,
+    role,
+    workspaces: myMemberships.map((m) => ({
+      id: m.workspaceId,
+      name: m.workspace.name,
+      role: m.role as Role,
+    })),
+    members: memberRows.map((m) => ({
+      id: m.id,
+      userId: m.userId,
+      name: m.user.name,
+      email: m.user.email,
+      role: m.role as Role,
+      isSelf: m.userId === user.id,
+      since: fmtDate(m.createdAt),
+    })),
+    teamInvites: teamInviteRows.map((t) => ({
+      id: t.id,
+      email: t.email,
+      role: t.role as Role,
+      token: t.token,
+      invitedBy: t.invitedBy,
+      createdAt: fmtDate(t.createdAt),
+    })),
     plan: workspace.plan as PlanTier,
     aiMode: workspace.aiMode as AiMode,
     hasByoKeys: Boolean(workspace.anthropicKeyEnc || workspace.openaiKeyEnc),

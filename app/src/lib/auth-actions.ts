@@ -4,7 +4,14 @@ import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "./db";
-import { createSession, destroySession } from "./auth";
+import { acceptTeamInvite, createSession, destroySession } from "./auth";
+
+/** Optionales Invite-Token aus dem Formular säubern (hex, 32 Zeichen). */
+function inviteToken(formData: FormData): string | null {
+  const raw = formData.get("invite");
+  if (typeof raw !== "string") return null;
+  return /^[a-f0-9]{32}$/.test(raw) ? raw : null;
+}
 
 const registerSchema = z.object({
   name: z.string().trim().min(2, "Name: mindestens 2 Zeichen").max(80),
@@ -69,6 +76,8 @@ export async function register(
   });
 
   await createSession(user.id);
+  const token = inviteToken(formData);
+  if (token) await acceptTeamInvite(user.id, token);
   redirect("/app");
 }
 
@@ -98,6 +107,8 @@ export async function login(
   if (!ok) return invalid;
 
   await createSession(user.id);
+  const token = inviteToken(formData);
+  if (token) await acceptTeamInvite(user.id, token);
   redirect("/app");
 }
 

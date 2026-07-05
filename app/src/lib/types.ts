@@ -145,6 +145,33 @@ export interface ConnectionInvite {
   createdAt: string; // dd.mm.yyyy
 }
 
+import type { Role } from "./permissions";
+
+export interface WorkspaceSummary {
+  id: string;
+  name: string;
+  role: Role;
+}
+
+export interface TeamMember {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  role: Role;
+  isSelf: boolean;
+  since: string;
+}
+
+export interface TeamInviteItem {
+  id: string;
+  email: string;
+  role: Role;
+  token: string;
+  invitedBy: string;
+  createdAt: string;
+}
+
 export type AiMode = "credits" | "byo";
 
 export interface CreditEntry {

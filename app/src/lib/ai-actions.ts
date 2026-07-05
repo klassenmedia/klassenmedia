@@ -14,6 +14,7 @@ import { requireWorkspace } from "./auth";
 import { getWorkspaceBundle, WorkspaceBundle } from "./data";
 import { AI_CAPTION_IDEAS } from "./demo-data";
 import { PLATFORMS, type Platform } from "./types";
+import { can, type Role } from "./permissions";
 import {
   AiError,
   generateCaption,
@@ -52,8 +53,12 @@ export type ImageResult = {
   bundle?: WorkspaceBundle;
 };
 
-async function bundleFor(workspaceId: string, user: { name: string; email: string }) {
-  return getWorkspaceBundle(workspaceId, user);
+async function bundleFor(
+  workspaceId: string,
+  user: { id: string; name: string; email: string },
+  role: Role
+) {
+  return getWorkspaceBundle(workspaceId, user, role);
 }
 
 /** Prüft das Guthaben, ohne abzubuchen. */
@@ -93,11 +98,12 @@ function sample(list: string[], i = 0): string {
 // ── Caption (Text via Claude) ─────────────────────────────────────────
 
 export async function generateCaptionAction(input: unknown): Promise<CaptionResult> {
-  const { workspace, user } = await requireWorkspace();
+  const { workspace, user, role } = await requireWorkspace();
+  if (!can(role, "content")) return { ok: false, error: "Deine Rolle darf keine Inhalte erzeugen." };
   const parsed = captionSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
-  const u = { name: user.name, email: user.email };
+  const u = { id: user.id, name: user.name, email: user.email };
 
   // Kein Key → Demo-Platzhalter, ohne Credits
   if (!textReady(workspace)) {
@@ -105,7 +111,7 @@ export async function generateCaptionAction(input: unknown): Promise<CaptionResu
       ok: true,
       text: sample(AI_CAPTION_IDEAS),
       source: "demo",
-      bundle: await bundleFor(workspace.id, u),
+      bundle: await bundleFor(workspace.id, u, role),
     };
   }
 
@@ -131,24 +137,25 @@ export async function generateCaptionAction(input: unknown): Promise<CaptionResu
     if (!charged) return { ok: false, error: "Nicht genug Credits." };
   }
 
-  return { ok: true, text, source: "ai", bundle: await bundleFor(workspace.id, u) };
+  return { ok: true, text, source: "ai", bundle: await bundleFor(workspace.id, u, role) };
 }
 
 // ── Content-Ideen (mehrere Captions) ──────────────────────────────────
 
 export async function generateIdeasAction(input: unknown): Promise<IdeasResult> {
-  const { workspace, user } = await requireWorkspace();
+  const { workspace, user, role } = await requireWorkspace();
+  if (!can(role, "content")) return { ok: false, error: "Deine Rolle darf keine Inhalte erzeugen." };
   const parsed = captionSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
-  const u = { name: user.name, email: user.email };
+  const u = { id: user.id, name: user.name, email: user.email };
 
   if (!textReady(workspace)) {
     return {
       ok: true,
       ideas: AI_CAPTION_IDEAS,
       source: "demo",
-      bundle: await bundleFor(workspace.id, u),
+      bundle: await bundleFor(workspace.id, u, role),
     };
   }
 
@@ -174,7 +181,7 @@ export async function generateIdeasAction(input: unknown): Promise<IdeasResult> 
     if (!charged) return { ok: false, error: "Nicht genug Credits." };
   }
 
-  return { ok: true, ideas, source: "ai", bundle: await bundleFor(workspace.id, u) };
+  return { ok: true, ideas, source: "ai", bundle: await bundleFor(workspace.id, u, role) };
 }
 
 // ── Bild (via OpenAI) ─────────────────────────────────────────────────
@@ -182,11 +189,12 @@ export async function generateIdeasAction(input: unknown): Promise<IdeasResult> 
 const imageSchema = z.string().trim().min(1, "Bitte beschreibe das gewünschte Bild").max(1000);
 
 export async function generateImageAction(input: unknown): Promise<ImageResult> {
-  const { workspace, user } = await requireWorkspace();
+  const { workspace, user, role } = await requireWorkspace();
+  if (!can(role, "content")) return { ok: false, error: "Deine Rolle darf keine Inhalte erzeugen." };
   const parsed = imageSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const prompt = parsed.data;
-  const u = { name: user.name, email: user.email };
+  const u = { id: user.id, name: user.name, email: user.email };
 
   // Kein Key → Demo-Platzhalter, ohne Credits
   if (!imageReady(workspace)) {
@@ -195,7 +203,7 @@ export async function generateImageAction(input: unknown): Promise<ImageResult> 
       ok: true,
       url: `placeholder:${hue}`,
       source: "demo",
-      bundle: await bundleFor(workspace.id, u),
+      bundle: await bundleFor(workspace.id, u, role),
     };
   }
 
@@ -226,5 +234,5 @@ export async function generateImageAction(input: unknown): Promise<ImageResult> 
     if (!charged) return { ok: false, error: "Nicht genug Credits." };
   }
 
-  return { ok: true, url: file.url, source: "ai", bundle: await bundleFor(workspace.id, u) };
+  return { ok: true, url: file.url, source: "ai", bundle: await bundleFor(workspace.id, u, role) };
 }

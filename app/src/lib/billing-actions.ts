@@ -13,6 +13,16 @@ import { db } from "./db";
 import { requireWorkspace } from "./auth";
 import { buyCreditsAction, setPlanAction, ActionResult } from "./actions";
 import { CREDIT_PACKAGES_EUR, PLAN_PRICES_EUR } from "./billing-prices";
+import { can } from "./permissions";
+
+/** Nur der Inhaber darf Abrechnung. Gibt eine Fehlermeldung zurück, sonst null. */
+async function requireBilling(): Promise<CheckoutResult | null> {
+  const { role } = await requireWorkspace();
+  if (!can(role, "billing")) {
+    return { ok: false, error: "Nur der Inhaber darf die Abrechnung verwalten." };
+  }
+  return null;
+}
 
 function stripeClient(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -47,6 +57,8 @@ export type CheckoutResult = ActionResult & { url?: string };
 
 /** Abo abschließen/wechseln — Stripe Checkout oder Demo-Fallback. */
 export async function checkoutPlanAction(tier: unknown): Promise<CheckoutResult> {
+  const denied = await requireBilling();
+  if (denied) return denied;
   const parsed = z.enum(["starter", "pro", "agency"]).safeParse(tier);
   if (!parsed.success) return { ok: false, error: "Ungültiger Tarif" };
 
@@ -82,6 +94,8 @@ export async function checkoutPlanAction(tier: unknown): Promise<CheckoutResult>
 
 /** Credit-Paket kaufen — Stripe Checkout (Einmalzahlung) oder Demo-Fallback. */
 export async function checkoutCreditsAction(pkgId: unknown): Promise<CheckoutResult> {
+  const denied = await requireBilling();
+  if (denied) return denied;
   const parsed = z.enum(["S", "M", "L"]).safeParse(pkgId);
   if (!parsed.success) return { ok: false, error: "Unbekanntes Paket" };
 
@@ -113,6 +127,8 @@ export async function checkoutCreditsAction(pkgId: unknown): Promise<CheckoutRes
 
 /** Stripe Customer Portal (Zahlungsmethode, Rechnungen, Kündigung). */
 export async function customerPortalAction(): Promise<CheckoutResult> {
+  const denied = await requireBilling();
+  if (denied) return denied;
   const stripe = stripeClient();
   if (!stripe) {
     return {

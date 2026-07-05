@@ -12,11 +12,12 @@ export default async function AppLayout({
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  const { workspace } = await requireWorkspace();
-  const bundle = await getWorkspaceBundle(workspace.id, {
-    name: user.name,
-    email: user.email,
-  });
+  const { workspace, role } = await requireWorkspace();
+  const bundle = await getWorkspaceBundle(
+    workspace.id,
+    { id: user.id, name: user.name, email: user.email },
+    role
+  );
 
   return <AppShell initial={bundle}>{children}</AppShell>;
 }

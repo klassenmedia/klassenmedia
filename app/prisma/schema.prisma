@@ -45,6 +45,7 @@ model Workspace {
   members            WorkspaceMember[]
   socialAccounts     SocialAccount[]
   connectionInvites  ConnectionInvite[]
+  teamInvites        TeamInvite[]
   posts              Post[]
   mediaAssets        MediaAsset[]
   reviewLinks        ReviewLink[]
@@ -72,8 +73,27 @@ model WorkspaceMember {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
   role        String    @default("owner") // owner | admin | editor | viewer
+  createdAt   DateTime  @default(now())
 
   @@unique([workspaceId, userId])
+}
+
+// Einladung eines Teammitglieds (Mensch) in einen Workspace. Nicht zu
+// verwechseln mit ConnectionInvite (Anbindung eines Kunden-Social-Accounts).
+model TeamInvite {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  email       String // eingeladene Adresse (Hinweis; Token = Zugang)
+  role        String    @default("editor") // admin | editor | viewer
+  token       String    @unique
+  status      String    @default("pending") // pending | accepted | revoked
+  invitedBy   String // Anzeigename des Einladenden
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  acceptedAt  DateTime?
+
+  @@index([workspaceId, status])
 }
 
 // ── Social Accounts & Kunden-Verbindungslinks ─────────────────────────

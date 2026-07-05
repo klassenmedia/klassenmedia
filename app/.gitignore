@@ -44,3 +44,5 @@ public/uploads/*
 !public/uploads/.gitkeep
 # SQLite
 prisma/dev.db*
+# Shadow-DB nur für `prisma migrate diff`
+shadow.db*

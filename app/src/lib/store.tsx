@@ -18,8 +18,12 @@ import {
   PostFormat,
   ReviewLinkItem,
   SocialAccount,
+  TeamInviteItem,
+  TeamMember,
+  WorkspaceSummary,
 } from "./types";
 import type { WorkspaceBundle } from "./data";
+import { can as canDo, type Capability, type Role } from "./permissions";
 import {
   checkoutCreditsAction,
   checkoutPlanAction,
@@ -44,6 +48,12 @@ import {
   requestChangesAction,
   createReviewLinkAction,
   revokeReviewLinkAction,
+  inviteMemberAction,
+  revokeTeamInviteAction,
+  changeMemberRoleAction,
+  removeMemberAction,
+  switchWorkspaceAction,
+  leaveWorkspaceAction,
 } from "./actions";
 import {
   generateCaptionAction,
@@ -64,7 +74,14 @@ export interface SavePostInput {
 
 interface Store {
   user: { name: string; email: string };
+  workspaceId: string;
   workspaceName: string;
+  role: Role;
+  workspaces: WorkspaceSummary[];
+  members: TeamMember[];
+  teamInvites: TeamInviteItem[];
+  /** Rollen-Check für die UI (Buttons aus-/einblenden) */
+  can: (cap: Capability) => boolean;
   accounts: SocialAccount[];
   posts: Post[];
   invites: ConnectionInvite[];
@@ -116,6 +133,12 @@ interface Store {
   requestChanges: (id: string, note: string) => Promise<boolean>;
   createReviewLink: (clientName: string) => Promise<void>;
   revokeReviewLink: (id: string) => Promise<void>;
+  inviteMember: (email: string, role: Role) => Promise<boolean>;
+  revokeTeamInvite: (id: string) => Promise<void>;
+  changeMemberRole: (memberId: string, role: Role) => Promise<void>;
+  removeMember: (memberId: string) => Promise<void>;
+  switchWorkspace: (workspaceId: string) => Promise<void>;
+  leaveWorkspace: () => Promise<void>;
 }
 
 const StoreContext = createContext<Store | null>(null);
@@ -148,6 +171,7 @@ export function StoreProvider({
     () => ({
       ...bundle,
       error,
+      can: (cap) => canDo(bundle.role, cap),
       clearError: () => setError(null),
       savePost: (p) => apply(savePostAction(p)),
       deletePost: async (id) => void (await apply(deletePostAction(id))),
@@ -238,6 +262,20 @@ export function StoreProvider({
       requestChanges: (id, note) => apply(requestChangesAction(id, note)),
       createReviewLink: async (name) => void (await apply(createReviewLinkAction(name))),
       revokeReviewLink: async (id) => void (await apply(revokeReviewLinkAction(id))),
+      inviteMember: (email, role) => apply(inviteMemberAction({ email, role })),
+      revokeTeamInvite: async (id) => void (await apply(revokeTeamInviteAction(id))),
+      changeMemberRole: async (memberId, role) =>
+        void (await apply(changeMemberRoleAction({ memberId, role }))),
+      removeMember: async (memberId) => void (await apply(removeMemberAction(memberId))),
+      switchWorkspace: async (workspaceId) => {
+        const okSwitch = await apply(switchWorkspaceAction(workspaceId));
+        // Beim Wechsel Seiteninhalte neu laden, damit alles zum neuen Workspace passt
+        if (okSwitch && typeof window !== "undefined") window.location.assign("/app");
+      },
+      leaveWorkspace: async () => {
+        const left = await apply(leaveWorkspaceAction());
+        if (left && typeof window !== "undefined") window.location.assign("/app");
+      },
     }),
     [bundle, error, apply]
   );

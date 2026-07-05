@@ -29,6 +29,7 @@ oder unter `/register` ein eigenes Konto anlegen.
 | Inbox (Kommentare liken/antworten/löschen) | ✅ persistiert — Sync mit Plattformen folgt in Phase 2 |
 | Analytics-Dashboard (KPIs, Trend, Kanäle, beste Zeiten, Top-Posts) | ✅ mit deterministischen Demo-Daten — echte Insights-Zahlen mit der Plattform-Anbindung |
 | Freigabe-Workflow (einreichen, freigeben, Änderungen erbeten) | ✅ echt, inkl. Aktivitätsprotokoll |
+| Team & Rollen (Einladen per Link, Rollen owner/admin/editor/viewer, Workspace-Wechsel) | ✅ echt — Berechtigungen serverseitig in jeder Action erzwungen |
 | Kunden-Freigabelinks (`/review/<token>`, ohne Login) | ✅ echt (Einmal-Token, 7 Tage gültig) |
 | KI-Credits (Kauf/Verbrauch, serverseitige Preise) | ✅ persistiert, Abzug nur bei echtem KI-Erfolg |
 | KI-Texte (Captions & Content-Ideen) | ✅ echt über Claude (`claude-opus-4-8`) — Demo-Platzhalter ohne Key |
@@ -47,6 +48,11 @@ oder unter `/register` ein eigenes Konto anlegen.
 - Autorisierung: jede Server Action lädt den Workspace aus der Session —
   fremde IDs aus dem Client werden immer gegen `workspaceId` geprüft
 - Preise/Kosten für Credits stehen nur serverseitig
+- Rollen & Rechte: jede mutierende Action prüft die Fähigkeit der Rolle erneut
+  serverseitig (`can(role, capability)`) — die UI blendet Buttons nur zusätzlich
+  aus. Der aktive Workspace steht in einem httpOnly-Cookie und wird bei jeder
+  Anfrage gegen die Mitgliedschaft geprüft; Team-Einladungen sind Einmal-Links
+  (7 Tage gültig)
 - BYO-API-Keys: AES-256-GCM mit Schlüssel aus `APP_SECRET` (ENV, nicht im Repo)
 - Uploads: MIME-Whitelist, 8-MB-Limit, zufällige Dateinamen
 

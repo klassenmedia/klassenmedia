@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { StoreProvider, useStore } from "@/lib/store";
 import type { WorkspaceBundle } from "@/lib/data";
 import { PLANS } from "@/lib/types";
+import { ROLE_LABELS } from "@/lib/permissions";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { logout } from "@/lib/auth-actions";
 
@@ -58,6 +59,17 @@ const NAV = [
     ),
   },
   {
+    href: "/app/team",
+    label: "Team",
+    icon: (
+      <>
+        <circle cx="5.5" cy="6" r="2" stroke="currentColor" strokeWidth="1.3" fill="none" />
+        <circle cx="11" cy="6.5" r="1.6" stroke="currentColor" strokeWidth="1.3" fill="none" />
+        <path d="M2 13c.4-1.8 1.9-2.8 3.5-2.8S8.6 11.2 9 13M9.5 10.6c1.3-.2 3 .5 3.4 2.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none" />
+      </>
+    ),
+  },
+  {
     href: "/app/ai",
     label: "KI-Studio",
     icon: (
@@ -94,7 +106,17 @@ function ErrorToast() {
 
 function Sidebar() {
   const pathname = usePathname();
-  const { plan, credits, user, comments, posts } = useStore();
+  const {
+    plan,
+    credits,
+    user,
+    comments,
+    posts,
+    role,
+    workspaceId,
+    workspaces,
+    switchWorkspace,
+  } = useStore();
   const openComments = comments.length;
   const openApprovals = posts.filter((p) => p.approval === "pending").length;
   const badges: Record<string, number> = {
@@ -112,6 +134,31 @@ function Sidebar() {
           <span className="text-lg font-semibold tracking-tight">Planbar</span>
         </Link>
         <ThemeToggle />
+      </div>
+
+      {/* Workspace-Wechsler + Rolle */}
+      <div className="px-3 pb-2">
+        <div className="rounded-xl border border-line bg-surface-2 p-2.5">
+          {workspaces.length > 1 ? (
+            <select
+              value={workspaceId}
+              onChange={(e) => switchWorkspace(e.target.value)}
+              aria-label="Workspace wechseln"
+              className="w-full rounded-lg border border-line bg-surface px-2 py-1.5 text-sm font-medium"
+            >
+              {workspaces.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="truncate px-1 text-sm font-medium">{workspaces[0]?.name}</div>
+          )}
+          <div className="mt-1.5 px-1 text-[11px] text-muted">
+            Deine Rolle: <span className="font-medium text-accent-fg">{ROLE_LABELS[role]}</span>
+          </div>
+        </div>
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 px-3">

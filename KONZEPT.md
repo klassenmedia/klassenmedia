@@ -114,12 +114,15 @@ gebaut wird sie gestaffelt (siehe Roadmap, Abschnitt 8). Statuslegende:
 - 🔲 Wettbewerbs-/Benchmark-Vergleich, beste Posting-Zeiten aus echten Daten
 
 **5. Team & Agentur-Workflow**
-- ✅ Workspaces (ein Mandant pro Kunde), Rollen im Datenmodell
+- ✅ Workspaces (ein Mandant pro Kunde), Nutzer in mehreren Workspaces, Wechsler
+- ✅ Team-Mitglieder per Link einladen; Rollen owner/admin/editor/viewer mit
+  serverseitig erzwungenen Rechten (`can(role, capability)`); Rolle ändern,
+  entfernen, Workspace verlassen
 - ✅ Freigabe-Workflow (Entwurf → zur Freigabe → freigegeben → geplant; oder
   „Änderungen erbeten" mit Kommentar zurück an den Ersteller)
 - ✅ Kunden-Freigabelinks (`/review/<token>`: Kunde sieht Vorschau, gibt
   frei/bittet um Änderungen — ohne Konto)
-- ✅ Aktivitätsprotokoll · 🔲 echte Team-Mitglieder einladen + Rollen-UI (7b)
+- ✅ Aktivitätsprotokoll
 
 **6. Werbeanzeigen (Ads)** — macht das Tool zum echten adhook-Ersatz
 - 🔲 „Beitrag bewerben" (einfachster Einstieg, aus dem Planer heraus)
@@ -263,7 +266,7 @@ nachfrage, nicht nach Feature-Liste — jede Phase ist einzeln verkaufbar:
 | Phase | Inhalt | Warum in dieser Reihenfolge |
 |---|---|---|
 | **6 — Analytics** | ✅ Dashboard fertig (KPIs, Trend, Kanal-Vergleich, beste Zeiten, Top-Posts) mit Demo-Daten · 🔲 6b: echte Insights-Zahlen (Meta/TikTok/LinkedIn-APIs), PDF-/White-Label-Reports | Erstes, wonach Agenturen nach dem Planen fragen; nutzt vorhandene Plattform-Verbindungen |
-| **7 — Freigabe & Team** | ✅ Freigabe-Workflow, Kunden-Freigabelinks, Aktivitätsprotokoll · 🔲 7b: Team-Mitglieder einladen + Rollen-UI (Multi-User) | Macht das Agency-Segment (129 €) rund; rein interne Logik, keine neuen Plattform-Reviews |
+| **7 — Freigabe & Team** | ✅ Freigabe-Workflow, Kunden-Freigabelinks, Aktivitätsprotokoll · ✅ 7b: Team-Mitglieder einladen, Rollen owner/admin/editor/viewer (serverseitig erzwungen), Multi-Workspace + Wechsler | Macht das Agency-Segment (129 €) rund; rein interne Logik, keine neuen Plattform-Reviews |
 | **8 — Engagement-Ausbau** | Zentrale Inbox für DMs + Kommentare aller Kanäle, Team-Zuweisung, gespeicherte Antworten | Baut auf der vorhandenen Inbox auf; braucht erweiterte Plattform-Scopes |
 | **9 — Ads** | „Beitrag bewerben" → Meta-Kampagnen (Marketing API) → Regeln/ROAS → Google Ads | Größter Brocken, höchstes Risiko (fremdes Budget); erst wenn Kern steht und Kunden fragen |
 | **10 — Politur** | Mobile App, Canva/Adobe-Integration, Marken-Kit, 2FA, weitere Plattformen | Abrundung zum vollen adhook-Ersatz |

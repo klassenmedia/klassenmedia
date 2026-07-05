@@ -32,7 +32,8 @@ interface ComposerState {
 }
 
 export default function PlannerPage() {
-  const { posts, accounts, savePost, deletePost, generateCaption, aiMode } = useStore();
+  const { posts, accounts, savePost, deletePost, generateCaption, aiMode, can } = useStore();
+  const canEdit = can("content");
 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -84,6 +85,7 @@ export default function PlannerPage() {
   }
 
   function openNew(dateKey: string) {
+    if (!canEdit) return;
     setAiHint(null);
     setComposer({
       body: "",
@@ -214,9 +216,15 @@ export default function PlannerPage() {
           >
             Heute
           </Button>
-          <Button onClick={() => openNew(todayKey)}>+ Neuer Post</Button>
+          {canEdit && <Button onClick={() => openNew(todayKey)}>+ Neuer Post</Button>}
         </div>
       </div>
+
+      {!canEdit && (
+        <div className="mb-4 rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-muted">
+          Nur-Ansicht: In deiner Rolle (Betrachter:in) kannst du Beiträge sehen, aber nicht ändern.
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-2xl border border-line bg-surface">
         <div className="grid grid-cols-7 border-b border-line">
