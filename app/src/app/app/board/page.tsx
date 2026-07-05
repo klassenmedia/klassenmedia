@@ -22,10 +22,13 @@ function columnOf(p: Post): ColKey {
 }
 
 export default function BoardPage() {
-  const { posts, accounts, movePost, approvePost, requestChanges, deletePost, savePost, can } =
+  const { posts, accounts, selectedClientId, movePost, approvePost, requestChanges, deletePost, savePost, can } =
     useStore();
   const canEdit = can("content");
   const canApprove = can("approve");
+  const visiblePosts = selectedClientId
+    ? posts.filter((p) => p.clientId === selectedClientId)
+    : posts;
 
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<ColKey | null>(null);
@@ -39,12 +42,12 @@ export default function BoardPage() {
 
   const grouped = useMemo(() => {
     const map: Record<ColKey, Post[]> = { draft: [], review: [], scheduled: [], published: [] };
-    for (const p of posts) map[columnOf(p)].push(p);
+    for (const p of visiblePosts) map[columnOf(p)].push(p);
     for (const key of Object.keys(map) as ColKey[]) {
       map[key].sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
     }
     return map;
-  }, [posts]);
+  }, [visiblePosts]);
 
   const detail = detailId ? posts.find((p) => p.id === detailId) ?? null : null;
 
@@ -79,6 +82,7 @@ export default function BoardPage() {
     const ok = await savePost({
       id: detail.id,
       body: editBody.trim(),
+      clientId: detail.clientId,
       date: editDate,
       time: editTime,
       accountIds: detail.accountIds,

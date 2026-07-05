@@ -8,6 +8,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 import {
   ActivityItem,
   AiMode,
+  ClientItem,
   CommentItem,
   ConnectionInvite,
   CreditEntry,
@@ -34,6 +35,10 @@ import {
   ActionResult,
   addAccountAction,
   createInviteAction,
+  createClientAction,
+  updateClientAction,
+  deleteClientAction,
+  assignAccountAction,
   deleteCommentAction,
   deletePostAction,
   movePostAction,
@@ -65,6 +70,7 @@ import {
 export interface SavePostInput {
   id?: string;
   body: string;
+  clientId?: string | null;
   date: string;
   time: string;
   accountIds: string[];
@@ -83,6 +89,10 @@ interface Store {
   teamInvites: TeamInviteItem[];
   /** Rollen-Check für die UI (Buttons aus-/einblenden) */
   can: (cap: Capability) => boolean;
+  clients: ClientItem[];
+  /** aktiver Kunden-Filter (null = alle Kunden) — reine Client-Ansicht */
+  selectedClientId: string | null;
+  setSelectedClient: (id: string | null) => void;
   accounts: SocialAccount[];
   posts: Post[];
   invites: ConnectionInvite[];
@@ -102,9 +112,18 @@ interface Store {
   deletePost: (id: string) => Promise<void>;
   /** Kanban: Beitrag in eine andere Pipeline-Spalte ziehen */
   movePost: (id: string, column: "draft" | "review" | "scheduled") => Promise<boolean>;
-  addAccount: (a: { platform: Platform; displayName: string; handle: string }) => Promise<void>;
+  addAccount: (a: {
+    platform: Platform;
+    displayName: string;
+    handle: string;
+    clientId?: string | null;
+  }) => Promise<void>;
   removeAccount: (id: string) => Promise<void>;
-  createInvite: (platform: Platform, clientName: string) => Promise<void>;
+  createClient: (name: string, color?: string) => Promise<boolean>;
+  updateClient: (id: string, patch: { name?: string; color?: string }) => Promise<void>;
+  deleteClient: (id: string) => Promise<void>;
+  assignAccount: (accountId: string, clientId: string | null) => Promise<void>;
+  createInvite: (platform: Platform, clientName: string, clientId?: string | null) => Promise<void>;
   revokeInvite: (id: string) => Promise<void>;
   acceptInvite: (id: string) => Promise<void>;
   /** Abo abschließen/wechseln — leitet zu Stripe weiter, wenn konfiguriert */
@@ -155,6 +174,7 @@ export function StoreProvider({
 }) {
   const [bundle, setBundle] = useState<WorkspaceBundle>(initial);
   const [error, setError] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   /** Ergebnis einer Action einarbeiten; liefert ok-Flag zurück */
   const apply = useCallback(async (promise: Promise<ActionResult>): Promise<boolean> => {
@@ -175,14 +195,21 @@ export function StoreProvider({
       ...bundle,
       error,
       can: (cap) => canDo(bundle.role, cap),
+      selectedClientId,
+      setSelectedClient: setSelectedClientId,
       clearError: () => setError(null),
       savePost: (p) => apply(savePostAction(p)),
       deletePost: async (id) => void (await apply(deletePostAction(id))),
       movePost: (id, column) => apply(movePostAction(id, column)),
       addAccount: async (a) => void (await apply(addAccountAction(a))),
       removeAccount: async (id) => void (await apply(removeAccountAction(id))),
-      createInvite: async (platform, clientName) =>
-        void (await apply(createInviteAction({ platform, clientName }))),
+      createClient: (name, color) => apply(createClientAction({ name, color })),
+      updateClient: async (id, patch) => void (await apply(updateClientAction(id, patch))),
+      deleteClient: async (id) => void (await apply(deleteClientAction(id))),
+      assignAccount: async (accountId, clientId) =>
+        void (await apply(assignAccountAction(accountId, clientId))),
+      createInvite: async (platform, clientName, clientId) =>
+        void (await apply(createInviteAction({ platform, clientName, clientId }))),
       revokeInvite: async (id) => void (await apply(revokeInviteAction(id))),
       acceptInvite: async (id) => void (await apply(acceptInviteAction(id))),
       checkoutPlan: async (p) => {
@@ -281,7 +308,7 @@ export function StoreProvider({
         if (left && typeof window !== "undefined") window.location.assign("/app");
       },
     }),
-    [bundle, error, apply]
+    [bundle, error, apply, selectedClientId]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

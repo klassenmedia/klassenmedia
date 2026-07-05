@@ -12,8 +12,10 @@ export default function AccountsPage() {
     accounts,
     posts,
     invites,
+    clients,
     addAccount,
     removeAccount,
+    assignAccount,
     createInvite,
     revokeInvite,
     acceptInvite,
@@ -24,7 +26,27 @@ export default function AccountsPage() {
   const [displayName, setDisplayName] = useState("");
   const [handle, setHandle] = useState("");
   const [clientName, setClientName] = useState("");
+  const [dialogClientId, setDialogClientId] = useState<string>("");
   const [copied, setCopied] = useState<string | null>(null);
+
+  const clientPicker =
+    clients.length > 0 ? (
+      <div>
+        <label className="mb-1.5 block text-sm font-medium">Kunde (optional)</label>
+        <select
+          value={dialogClientId}
+          onChange={(e) => setDialogClientId(e.target.value)}
+          className={inputCls}
+        >
+          <option value="">— Kein Kunde —</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    ) : null;
 
   const pending = invites.filter((i) => i.status === "pending");
 
@@ -33,18 +55,24 @@ export default function AccountsPage() {
     setDisplayName("");
     setHandle("");
     setClientName("");
+    setDialogClientId("");
     setMode("choose");
   }
 
   async function submitSelf() {
     if (!displayName.trim() || !handle.trim()) return;
-    await addAccount({ platform, displayName: displayName.trim(), handle: handle.trim() });
+    await addAccount({
+      platform,
+      displayName: displayName.trim(),
+      handle: handle.trim(),
+      clientId: dialogClientId || null,
+    });
     setMode(null);
   }
 
   async function submitInvite() {
     if (!clientName.trim()) return;
-    await createInvite(platform, clientName.trim());
+    await createInvite(platform, clientName.trim(), dialogClientId || null);
     setMode("invite-done");
   }
 
@@ -114,6 +142,23 @@ export default function AccountsPage() {
                 <span>{PLATFORMS[acc.platform].label}</span>
                 <span>{postCount} Posts</span>
               </div>
+              {clients.length > 0 && (
+                <div className="mt-3">
+                  <select
+                    value={acc.clientId ?? ""}
+                    onChange={(e) => assignAccount(acc.id, e.target.value || null)}
+                    aria-label="Kunde zuordnen"
+                    className="w-full rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-xs"
+                  >
+                    <option value="">— Kein Kunde —</option>
+                    {clients.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="mt-2 flex items-center gap-1.5 text-xs text-success">
                 <span className="h-1.5 w-1.5 rounded-full bg-success" />
                 Verbunden
@@ -229,6 +274,7 @@ export default function AccountsPage() {
                 className={inputCls}
               />
             </div>
+            {clientPicker}
             <p className="text-xs text-muted">
               Demo-Modus: Hier öffnet sich später der echte OAuth-Login der Plattform, danach
               wählst du aus deinen verwalteten Seiten/Profilen aus.
@@ -259,6 +305,7 @@ export default function AccountsPage() {
                 autoFocus
               />
             </div>
+            {clientPicker}
             <p className="text-xs text-muted">
               Der Link ist 7 Tage gültig und kann nur einmal verwendet werden. Dein Kunde loggt
               sich damit beim offiziellen Login der Plattform ein und bestätigt den Zugriff.

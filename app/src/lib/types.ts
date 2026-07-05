@@ -25,6 +25,16 @@ export interface SocialAccount {
   platform: Platform;
   displayName: string;
   handle: string;
+  clientId: string | null;
+}
+
+/** Kunde (Mandant der Agentur) — gruppiert Accounts */
+export interface ClientItem {
+  id: string;
+  name: string;
+  color: string;
+  accountCount: number;
+  postCount: number;
 }
 
 export type PostStatus = "draft" | "scheduled" | "publishing" | "published" | "failed";
@@ -66,6 +76,8 @@ export function mediaBackground(url: string): string {
 export interface Post {
   id: string;
   body: string;
+  /** Kunde, für den dieser Beitrag ist (null = keinem zugeordnet) */
+  clientId: string | null;
   /** ISO-Datum yyyy-mm-dd (lokal) */
   date: string;
   /** hh:mm */
@@ -122,6 +134,7 @@ export interface CommentReply {
 export interface CommentItem {
   id: string;
   postId: string;
+  clientId: string | null;
   postSnippet: string;
   platform: Platform;
   accountLabel: string;

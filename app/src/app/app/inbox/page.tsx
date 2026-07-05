@@ -5,7 +5,11 @@ import { useStore } from "@/lib/store";
 import { Button, inputCls, PlatformChip } from "@/components/ui";
 
 export default function InboxPage() {
-  const { comments, toggleCommentLike, replyComment, deleteComment } = useStore();
+  const { comments: allComments, selectedClientId, toggleCommentLike, replyComment, deleteComment } =
+    useStore();
+  const comments = selectedClientId
+    ? allComments.filter((c) => c.clientId === selectedClientId)
+    : allComments;
   const [replyFor, setReplyFor] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);

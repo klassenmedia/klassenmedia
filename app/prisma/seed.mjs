@@ -57,20 +57,29 @@ async function main() {
     },
   });
 
+  // Kunden (Mandanten der Agentur)
+  const clientKM = await db.client.create({
+    data: { workspaceId: workspace.id, name: "Klassen Media", color: "#2563eb" },
+  });
+  const clientBB = await db.client.create({
+    data: { workspaceId: workspace.id, name: "Bäckerei Berger", color: "#f59e0b" },
+  });
+
   const [ig, fb, tt, li, yt] = await Promise.all(
     [
-      { platform: "instagram", displayName: "Klassen Media", handle: "@klassenmedia" },
-      { platform: "facebook", displayName: "Klassen Media", handle: "Klassen Media GmbH" },
-      { platform: "tiktok", displayName: "Klassen Media", handle: "@klassenmedia" },
-      { platform: "linkedin", displayName: "Andreas Klassen", handle: "andreas-klassen" },
-      { platform: "youtube", displayName: "Klassen Media", handle: "@klassenmedia" },
+      { platform: "instagram", displayName: "Klassen Media", handle: "@klassenmedia", clientId: clientKM.id },
+      { platform: "facebook", displayName: "Bäckerei Berger", handle: "Bäckerei Berger", clientId: clientBB.id },
+      { platform: "tiktok", displayName: "Bäckerei Berger", handle: "@baeckerei.berger", clientId: clientBB.id },
+      { platform: "linkedin", displayName: "Andreas Klassen", handle: "andreas-klassen", clientId: clientKM.id },
+      { platform: "youtube", displayName: "Klassen Media", handle: "@klassenmedia", clientId: clientKM.id },
     ].map((a) => db.socialAccount.create({ data: { workspaceId: workspace.id, ...a } }))
   );
 
-  async function post(body, dayOffset, hour, minute, accounts, status, format, hues) {
+  async function post(body, dayOffset, hour, minute, accounts, status, format, hues, clientId) {
     return db.post.create({
       data: {
         workspaceId: workspace.id,
+        clientId,
         body,
         scheduledAt: at(dayOffset, hour, minute),
         status,
@@ -88,15 +97,15 @@ async function main() {
     });
   }
 
-  const p1 = await post(CAPTIONS.bts, -2, 9, 0, [ig, fb], "published", "image", [210]);
-  await post(CAPTIONS.fehler, -1, 18, 30, [li], "published", "text", []);
-  const p3 = await post(CAPTIONS.reel, 0, 12, 0, [ig, tt], "scheduled", "video", [280]);
-  await post(CAPTIONS.kunde, 1, 10, 0, [fb, ig], "scheduled", "image", [30]);
-  await post(CAPTIONS.tutorial, 3, 16, 0, [yt], "scheduled", "video", [150]);
-  await post(CAPTIONS.job, 5, 8, 30, [li, fb], "scheduled", "text", []);
-  await post(CAPTIONS.story, 8, 11, 15, [ig], "scheduled", "story", [330]);
+  const p1 = await post(CAPTIONS.bts, -2, 9, 0, [ig], "published", "image", [210], clientKM.id);
+  await post(CAPTIONS.fehler, -1, 18, 30, [li], "published", "text", [], clientKM.id);
+  const p3 = await post(CAPTIONS.reel, 0, 12, 0, [ig], "scheduled", "video", [280], clientKM.id);
+  await post(CAPTIONS.kunde, 1, 10, 0, [fb], "scheduled", "image", [30], clientBB.id);
+  await post(CAPTIONS.tutorial, 3, 16, 0, [yt], "scheduled", "video", [150], clientKM.id);
+  await post(CAPTIONS.job, 5, 8, 30, [li], "scheduled", "text", [], clientKM.id);
+  await post(CAPTIONS.story, 8, 11, 15, [fb], "scheduled", "story", [330], clientBB.id);
   // ein Beitrag wartet auf Freigabe (Phase-7-Demo)
-  const p8 = await post(CAPTIONS.karussell, 12, 9, 0, [ig, tt, fb], "draft", "carousel", [45, 90, 200]);
+  const p8 = await post(CAPTIONS.karussell, 12, 9, 0, [tt, fb], "draft", "carousel", [45, 90, 200], clientBB.id);
   await db.post.update({
     where: { id: p8.id },
     data: { approval: "pending", submittedAt: new Date() },
@@ -149,6 +158,7 @@ async function main() {
   const invite = await db.connectionInvite.create({
     data: {
       workspaceId: workspace.id,
+      clientId: clientBB.id,
       platform: "instagram",
       clientName: "Bäckerei Berger",
       token: "k3x9mq2vdemo0001",

@@ -117,7 +117,10 @@ gebaut wird sie gestaffelt (siehe Roadmap, Abschnitt 8). Statuslegende:
 - 🔲 Wettbewerbs-/Benchmark-Vergleich, beste Posting-Zeiten aus echten Daten
 
 **5. Team & Agentur-Workflow**
-- ✅ Workspaces (ein Mandant pro Kunde), Nutzer in mehreren Workspaces, Wechsler
+- ✅ Kunden-Ebene: eine Agentur = ein Arbeitsbereich, darin Kunden als Gruppen
+  mit ihren Accounts; globaler Kunden-Filter über Planer/Board/Inbox; Kunden-
+  Übersicht (wer hat welche Accounts). Skaliert auf 15+ Kunden × mehrere Accounts.
+- ✅ Workspaces (Agentur-Konto), Nutzer in mehreren Workspaces, Wechsler
 - ✅ Team-Mitglieder per Link einladen; Rollen owner/admin/editor/viewer mit
   serverseitig erzwungenen Rechten (`can(role, capability)`); Rolle ändern,
   entfernen, Workspace verlassen

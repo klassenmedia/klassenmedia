@@ -46,6 +46,7 @@ model Workspace {
   socialAccounts     SocialAccount[]
   connectionInvites  ConnectionInvite[]
   teamInvites        TeamInvite[]
+  clients            Client[]
   posts              Post[]
   mediaAssets        MediaAsset[]
   reviewLinks        ReviewLink[]
@@ -96,12 +97,32 @@ model TeamInvite {
   @@index([workspaceId, status])
 }
 
+// ── Kunden (Mandanten der Agentur) ────────────────────────────────────
+// Eine Agentur = ein Workspace. Darin gruppiert "Client" die Social-Accounts
+// je Kunde, damit ein Social-Media-Manager 15+ Kunden übersichtlich verwaltet.
+model Client {
+  id          String          @id @default(cuid())
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  name        String
+  color       String          @default("#2563eb") // für die visuelle Gruppierung
+  createdAt   DateTime        @default(now())
+  accounts    SocialAccount[]
+  posts       Post[]
+  invites     ConnectionInvite[]
+
+  @@index([workspaceId])
+}
+
 // ── Social Accounts & Kunden-Verbindungslinks ─────────────────────────
 
 model SocialAccount {
   id          String    @id @default(cuid())
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   workspaceId String
+  // Zuordnung zu einem Kunden (nullable = noch keinem Kunden zugeordnet)
+  client      Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId    String?
   platform    String // instagram | facebook | tiktok | linkedin | youtube | x | pinterest
   displayName String
   handle      String
@@ -119,6 +140,9 @@ model ConnectionInvite {
   id          String    @id @default(cuid())
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   workspaceId String
+  // optionaler Kunde, dem der verbundene Account zugeordnet wird
+  client      Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId    String?
   token       String    @unique
   platform    String
   clientName  String
@@ -136,6 +160,9 @@ model Post {
   id          String        @id @default(cuid())
   workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   workspaceId String
+  // Zuordnung zu einem Kunden (nullable für Bestandsdaten / kundenlose Posts)
+  client      Client?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId    String?
   body        String
   format      String        @default("image") // text | image | video | carousel | story
   scheduledAt DateTime
@@ -154,6 +181,7 @@ model Post {
   @@index([workspaceId, scheduledAt])
   @@index([status, scheduledAt]) // Scheduler-Query (Phase 2): fällige Posts
   @@index([workspaceId, approval])
+  @@index([clientId])
 }
 
 // Kunden-Freigabelink: Kunde sieht die zur Freigabe eingereichten Posts und

@@ -23,6 +23,7 @@ const MONTHS = [
 interface ComposerState {
   id?: string;
   body: string;
+  clientId: string | null;
   date: string;
   time: string;
   accountIds: string[];
@@ -32,8 +33,23 @@ interface ComposerState {
 }
 
 export default function PlannerPage() {
-  const { posts, accounts, savePost, deletePost, generateCaption, aiMode, can } = useStore();
+  const {
+    posts,
+    accounts,
+    clients,
+    selectedClientId,
+    savePost,
+    deletePost,
+    generateCaption,
+    aiMode,
+    can,
+  } = useStore();
   const canEdit = can("content");
+
+  // Global gefilterte Sicht (Kunden-Filter aus der Sidebar)
+  const visiblePosts = selectedClientId
+    ? posts.filter((p) => p.clientId === selectedClientId)
+    : posts;
 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -67,7 +83,7 @@ export default function PlannerPage() {
 
   const postsByDay = useMemo(() => {
     const map = new Map<string, Post[]>();
-    for (const p of posts) {
+    for (const p of visiblePosts) {
       const list = map.get(p.date) ?? [];
       list.push(p);
       map.set(p.date, list);
@@ -76,7 +92,7 @@ export default function PlannerPage() {
       list.sort((a, b) => a.time.localeCompare(b.time));
     }
     return map;
-  }, [posts]);
+  }, [visiblePosts]);
 
   function shiftMonth(delta: number) {
     const d = new Date(year, month + delta, 1);
@@ -87,11 +103,15 @@ export default function PlannerPage() {
   function openNew(dateKey: string) {
     if (!canEdit) return;
     setAiHint(null);
+    // Wenn ein Kunde gefiltert ist, den Post gleich diesem Kunden zuordnen
+    const clientId = selectedClientId;
+    const preselect = clientId ? accounts.filter((a) => a.clientId === clientId) : accounts;
     setComposer({
       body: "",
+      clientId,
       date: dateKey,
       time: "10:00",
-      accountIds: accounts.slice(0, 1).map((a) => a.id),
+      accountIds: preselect.slice(0, 1).map((a) => a.id),
       status: "scheduled",
       format: "image",
       media: [],
@@ -100,7 +120,24 @@ export default function PlannerPage() {
 
   function openEdit(post: Post) {
     setAiHint(null);
-    setComposer({ ...post, media: [...post.media] });
+    setComposer({ ...post, clientId: post.clientId, media: [...post.media] });
+  }
+
+  // Auswählbare Accounts richten sich nach dem gewählten Kunden
+  const composerAccounts = composer
+    ? composer.clientId
+      ? accounts.filter((a) => a.clientId === composer.clientId)
+      : accounts
+    : [];
+
+  function setComposerClient(clientId: string | null) {
+    setComposer((c) => {
+      if (!c) return c;
+      // Account-Auswahl auf den neuen Kunden eingrenzen
+      const allowed = clientId ? accounts.filter((a) => a.clientId === clientId) : accounts;
+      const allowedIds = new Set(allowed.map((a) => a.id));
+      return { ...c, clientId, accountIds: c.accountIds.filter((id) => allowedIds.has(id)) };
+    });
   }
 
   function setFormat(format: PostFormat) {
@@ -171,6 +208,7 @@ export default function PlannerPage() {
     const ok = await savePost({
       id: composer.id,
       body: composer.body.trim(),
+      clientId: composer.clientId,
       date: composer.date,
       time: composer.time,
       accountIds: composer.accountIds,
@@ -367,6 +405,24 @@ export default function PlannerPage() {
                   </div>
                 );
               })()}
+            {clients.length > 0 && (
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Kunde</label>
+                <select
+                  value={composer.clientId ?? ""}
+                  onChange={(e) => setComposerClient(e.target.value || null)}
+                  className={inputCls}
+                >
+                  <option value="">— Kein Kunde —</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <label className="text-sm font-medium">Text</label>
@@ -396,7 +452,7 @@ export default function PlannerPage() {
                 Veröffentlichen auf ({composer.accountIds.length} ausgewählt)
               </label>
               <div className="flex flex-wrap gap-2">
-                {accounts.map((acc) => {
+                {composerAccounts.map((acc) => {
                   const selected = composer.accountIds.includes(acc.id);
                   return (
                     <button

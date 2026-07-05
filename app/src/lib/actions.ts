@@ -86,6 +86,7 @@ function fail(error: string): ActionResult {
 const postSchema = z.object({
   id: z.string().optional(),
   body: z.string().trim().min(1, "Text fehlt").max(5000),
+  clientId: z.string().nullable().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().regex(/^\d{2}:\d{2}$/),
   accountIds: z.array(z.string()).min(1, "Mindestens ein Account"),
@@ -117,6 +118,8 @@ export async function savePostAction(input: unknown): Promise<ActionResult> {
   const scheduledAt = new Date(`${data.date}T${data.time}:00`);
   if (isNaN(scheduledAt.getTime())) return fail("Ungültiger Termin");
 
+  const clientId = await resolveClientId(workspace.id, data.clientId);
+
   // "review" -> Entwurf, der auf Freigabe wartet
   const isReview = data.status === "review";
   const dbStatus = isReview ? "draft" : data.status;
@@ -132,6 +135,7 @@ export async function savePostAction(input: unknown): Promise<ActionResult> {
       where: { id: postId },
       data: {
         body: data.body,
+        clientId,
         format: data.format,
         scheduledAt,
         status: dbStatus,
@@ -148,6 +152,7 @@ export async function savePostAction(input: unknown): Promise<ActionResult> {
     const created = await db.post.create({
       data: {
         workspaceId: workspace.id,
+        clientId,
         body: data.body,
         format: data.format,
         scheduledAt,
@@ -262,6 +267,7 @@ const accountSchema = z.object({
   platform: z.enum(PLATFORM_VALUES),
   displayName: z.string().trim().min(1).max(100),
   handle: z.string().trim().min(1).max(100),
+  clientId: z.string().nullable().optional(),
 });
 
 export async function addAccountAction(input: unknown): Promise<ActionResult> {
@@ -270,10 +276,22 @@ export async function addAccountAction(input: unknown): Promise<ActionResult> {
   const { workspace } = g.ctx;
   const parsed = accountSchema.safeParse(input);
   if (!parsed.success) return fail("Bitte alle Felder ausfüllen");
+  const { clientId, ...rest } = parsed.data;
+  const validClientId = await resolveClientId(workspace.id, clientId);
   await db.socialAccount.create({
-    data: { workspaceId: workspace.id, ...parsed.data },
+    data: { workspaceId: workspace.id, ...rest, clientId: validClientId },
   });
   return ok();
+}
+
+/** Prüft, dass eine clientId (falls gesetzt) zum Workspace gehört; sonst null. */
+async function resolveClientId(
+  workspaceId: string,
+  clientId: string | null | undefined
+): Promise<string | null> {
+  if (!clientId) return null;
+  const client = await db.client.findFirst({ where: { id: clientId, workspaceId } });
+  return client ? client.id : null;
 }
 
 export async function removeAccountAction(id: string): Promise<ActionResult> {
@@ -287,6 +305,7 @@ export async function removeAccountAction(id: string): Promise<ActionResult> {
 const inviteSchema = z.object({
   platform: z.enum(PLATFORM_VALUES),
   clientName: z.string().trim().min(1).max(100),
+  clientId: z.string().nullable().optional(),
 });
 
 export async function createInviteAction(input: unknown): Promise<ActionResult> {
@@ -295,11 +314,13 @@ export async function createInviteAction(input: unknown): Promise<ActionResult> 
   const { workspace } = g.ctx;
   const parsed = inviteSchema.safeParse(input);
   if (!parsed.success) return fail("Bitte den Kundennamen eingeben");
+  const validClientId = await resolveClientId(workspace.id, parsed.data.clientId);
   await db.connectionInvite.create({
     data: {
       workspaceId: workspace.id,
       platform: parsed.data.platform,
       clientName: parsed.data.clientName,
+      clientId: validClientId,
       token: randomBytes(16).toString("hex"),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     },
@@ -328,6 +349,7 @@ export async function acceptInviteAction(id: string): Promise<ActionResult> {
     db.socialAccount.create({
       data: {
         workspaceId: workspace.id,
+        clientId: invite.clientId,
         platform: invite.platform,
         displayName: invite.clientName,
         handle: "@" + invite.clientName.toLowerCase().replace(/[^a-zä-ü0-9]+/gi, ""),
@@ -338,6 +360,82 @@ export async function acceptInviteAction(id: string): Promise<ActionResult> {
       data: { status: "accepted", acceptedAt: new Date() },
     }),
   ]);
+  return ok();
+}
+
+// ── Kunden (Mandanten der Agentur) ────────────────────────────────────
+
+const HEX = /^#[0-9a-fA-F]{6}$/;
+const clientSchema = z.object({
+  name: z.string().trim().min(1, "Name fehlt").max(80),
+  color: z.string().regex(HEX, "Ungültige Farbe").optional(),
+});
+
+export async function createClientAction(input: unknown): Promise<ActionResult> {
+  const g = await guard("accounts");
+  if (g.denied) return g.denied;
+  const { workspace } = g.ctx;
+  const parsed = clientSchema.safeParse(input);
+  if (!parsed.success) return fail(parsed.error.issues[0].message);
+  await db.client.create({
+    data: {
+      workspaceId: workspace.id,
+      name: parsed.data.name,
+      color: parsed.data.color ?? "#2563eb",
+    },
+  });
+  return ok();
+}
+
+export async function updateClientAction(id: string, input: unknown): Promise<ActionResult> {
+  const g = await guard("accounts");
+  if (g.denied) return g.denied;
+  const { workspace } = g.ctx;
+  const parsed = clientSchema.partial().safeParse(input);
+  if (!parsed.success) return fail(parsed.error.issues[0].message);
+  const owned = await db.client.findFirst({ where: { id, workspaceId: workspace.id } });
+  if (!owned) return fail("Kunde nicht gefunden");
+  await db.client.update({
+    where: { id },
+    data: {
+      ...(parsed.data.name ? { name: parsed.data.name } : {}),
+      ...(parsed.data.color ? { color: parsed.data.color } : {}),
+    },
+  });
+  return ok();
+}
+
+/** Kunde löschen — seine Accounts/Posts bleiben erhalten (werden „ohne Kunde"). */
+export async function deleteClientAction(id: string): Promise<ActionResult> {
+  const g = await guard("accounts");
+  if (g.denied) return g.denied;
+  const { workspace } = g.ctx;
+  await db.client.deleteMany({ where: { id, workspaceId: workspace.id } });
+  return ok();
+}
+
+/** Einen Account einem Kunden zuordnen (oder mit null die Zuordnung lösen). */
+export async function assignAccountAction(
+  accountId: string,
+  clientId: unknown
+): Promise<ActionResult> {
+  const g = await guard("accounts");
+  if (g.denied) return g.denied;
+  const { workspace } = g.ctx;
+  const parsed = z.string().nullable().safeParse(clientId);
+  if (!parsed.success) return fail("Ungültige Auswahl");
+
+  // Zielkunde muss zum Workspace gehören
+  if (parsed.data) {
+    const client = await db.client.findFirst({
+      where: { id: parsed.data, workspaceId: workspace.id },
+    });
+    if (!client) return fail("Kunde nicht gefunden");
+  }
+  await db.socialAccount.updateMany({
+    where: { id: accountId, workspaceId: workspace.id },
+    data: { clientId: parsed.data },
+  });
   return ok();
 }
 

@@ -60,6 +60,16 @@ const NAV = [
     ),
   },
   {
+    href: "/app/clients",
+    label: "Kunden",
+    icon: (
+      <>
+        <rect x="2.5" y="5" width="11" height="8.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" fill="none" />
+        <path d="M5.5 5V3.8c0-.7.5-1.3 1.2-1.3h2.6c.7 0 1.2.6 1.2 1.3V5" stroke="currentColor" strokeWidth="1.4" fill="none" />
+      </>
+    ),
+  },
+  {
     href: "/app/accounts",
     label: "Accounts",
     icon: (
@@ -127,6 +137,9 @@ function Sidebar() {
     workspaceId,
     workspaces,
     switchWorkspace,
+    clients,
+    selectedClientId,
+    setSelectedClient,
   } = useStore();
   const openComments = comments.length;
   const openApprovals = posts.filter((p) => p.approval === "pending").length;
@@ -171,6 +184,28 @@ function Sidebar() {
           </div>
         </div>
       </div>
+
+      {/* Kunden-Filter — wirkt auf Planer, Board, Inbox */}
+      {clients.length > 0 && (
+        <div className="px-3 pb-2">
+          <label className="mb-1 block px-1 text-[11px] font-medium uppercase tracking-wider text-muted">
+            Kunde
+          </label>
+          <select
+            value={selectedClientId ?? ""}
+            onChange={(e) => setSelectedClient(e.target.value || null)}
+            aria-label="Nach Kunde filtern"
+            className="w-full rounded-lg border border-line bg-surface px-2 py-1.5 text-sm"
+          >
+            <option value="">Alle Kunden</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <nav className="flex flex-1 flex-col gap-1 px-3">
         {NAV.map((item) => {

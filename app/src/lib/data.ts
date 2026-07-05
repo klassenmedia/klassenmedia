@@ -7,6 +7,7 @@ import {
   ActivityItem,
   AiMode,
   ApprovalStatus,
+  ClientItem,
   CommentItem,
   ConnectionInvite,
   CreditEntry,
@@ -43,6 +44,7 @@ export interface WorkspaceBundle {
     subscriptionStatus: string | null;
     currentPeriodEnd: string | null;
   };
+  clients: ClientItem[];
   accounts: SocialAccount[];
   posts: Post[];
   invites: ConnectionInvite[];
@@ -82,6 +84,7 @@ export async function getWorkspaceBundle(
     memberRows,
     teamInviteRows,
     myMemberships,
+    clientRows,
   ] = await Promise.all([
     db.workspace.findUniqueOrThrow({ where: { id: workspaceId } }),
     db.socialAccount.findMany({
@@ -137,6 +140,11 @@ export async function getWorkspaceBundle(
       include: { workspace: true },
       orderBy: { createdAt: "asc" },
     }),
+    db.client.findMany({
+      where: { workspaceId },
+      include: { _count: { select: { accounts: true, posts: true } } },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   return {
@@ -178,15 +186,24 @@ export async function getWorkspaceBundle(
         ? fmtDate(workspace.currentPeriodEnd)
         : null,
     },
+    clients: clientRows.map((c) => ({
+      id: c.id,
+      name: c.name,
+      color: c.color,
+      accountCount: c._count.accounts,
+      postCount: c._count.posts,
+    })),
     accounts: accounts.map((a) => ({
       id: a.id,
       platform: a.platform as Platform,
       displayName: a.displayName,
       handle: a.handle,
+      clientId: a.clientId,
     })),
     posts: posts.map((p) => ({
       id: p.id,
       body: p.body,
+      clientId: p.clientId,
       date: dateKey(p.scheduledAt),
       time: timeKey(p.scheduledAt),
       accountIds: p.accounts.map((pa) => pa.accountId),
@@ -218,6 +235,7 @@ export async function getWorkspaceBundle(
       return {
         id: c.id,
         postId: c.postId,
+        clientId: c.post.clientId,
         postSnippet: c.post.body.slice(0, 80),
         platform: (firstAccount?.platform ?? "instagram") as Platform,
         accountLabel: firstAccount?.handle ?? "—",
