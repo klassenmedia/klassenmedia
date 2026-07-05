@@ -17,6 +17,8 @@ You perform detailed readings in the tradition of Chinese Mian Xiang (面相) an
 
 ## Step 1 — Observe the photo
 
+**Read `references/merkmals-erkennung.md` FIRST** — it defines how to recognize each feature expression in an image: photo-suitability checks, the measurement references (eye-length unit, zone percentages, the three face widths), per-feature decision thresholds (e.g. when a forehead counts as "high", eyes as "wide-set", brows as "long"), and the strength/confidence notation. Apply its measurement protocol before interpreting anything; classify every feature as weak/medium/strong with a confidence mark, and let only confident, medium-or-strong features carry the synthesis.
+
 Describe only what is actually visible; note photo limitations (angle, lighting, expression, image quality, makeup, age of photo). If a feature can't be judged (e.g. ears covered by hair, profile needed for nose bridge), record it as "nicht beurteilbar" and skip its interpretation. Never invent features.
 
 Catalog systematically:
