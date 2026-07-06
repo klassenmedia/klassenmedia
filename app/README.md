@@ -61,9 +61,11 @@ oder unter `/register` ein eigenes Konto anlegen.
 - BYO-API-Keys: AES-256-GCM mit Schlüssel aus `APP_SECRET` (ENV, nicht im Repo)
 - Uploads: MIME-Whitelist, 8-MB-Limit, zufällige Dateinamen
 
-## Cloud-Deploy (später)
+## Cloud-Deploy
 
-1. Postgres statt SQLite: in `prisma/schema.prisma` Provider umstellen,
-   String-Status-Felder zu Enums machen, `DATABASE_URL` setzen
-2. Uploads auf S3/R2 umstellen (`src/app/api/upload/route.ts`)
-3. `APP_SECRET` als Server-Secret setzen, HTTPS erzwingen (Cookie `secure` greift automatisch)
+**Schritt-für-Schritt-Anleitung: [`DEPLOY.md`](./DEPLOY.md)** (Railway oder Fly.io).
+
+Kurz: Der Code ist deploy-fertig — DB und Uploads liegen per `DATABASE_URL` /
+`UPLOADS_DIR` auf einem persistenten Volume, Migrationen laufen automatisch beim
+Start (`npm run start:prod`), ein `Dockerfile` ist dabei. Läuft mit SQLite auf
+**einer** Instanz (reicht für den Start); Postgres ist der spätere Skalierungsschritt.

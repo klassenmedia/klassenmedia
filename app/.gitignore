@@ -39,9 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-# Uploads bleiben lokal
+# Uploads bleiben lokal (public/uploads = alt, ./uploads = neu, per UPLOADS_DIR konfigurierbar)
 public/uploads/*
 !public/uploads/.gitkeep
+/uploads/
 # SQLite
 prisma/dev.db*
 # Shadow-DB nur für `prisma migrate diff`

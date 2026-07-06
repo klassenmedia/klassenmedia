@@ -4,6 +4,7 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { requireWorkspace } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { uploadsDir } from "@/lib/uploads";
 
 // Bild-Upload (Phase 1: lokales Dateisystem; Cloud-Deploy nutzt später S3/R2).
 // Sicherheit: Auth-Pflicht, MIME-Whitelist, Größenlimit, zufälliger Dateiname
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
   }
 
   const name = `${randomBytes(12).toString("hex")}.${ext}`;
-  const dir = path.join(process.cwd(), "public", "uploads");
+  const dir = uploadsDir();
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, name), Buffer.from(await file.arrayBuffer()));
 

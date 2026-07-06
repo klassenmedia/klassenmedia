@@ -9,6 +9,8 @@
     "lint": "eslint",
     "db:seed": "node prisma/seed.mjs",
     "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "start:prod": "prisma migrate deploy && next start",
     "setup": "prisma migrate dev --name init_local && node prisma/seed.mjs"
   },
   "dependencies": {
