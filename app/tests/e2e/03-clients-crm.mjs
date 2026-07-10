@@ -51,7 +51,22 @@ export default async function run({ page, baseUrl }) {
     { timeout: 10_000 }
   );
 
-  // Reload — Brand-Felder, Kontakt und erledigte Aufgabe müssen persistent sein
+  // Kontakt-Historie: Telefonat protokollieren
+  const callNote = "Telefonat E2E " + Date.now();
+  await page.click('button:has-text("📞 Telefonat")');
+  await page.fill('textarea[placeholder*="telefoniert"]', callNote);
+  await page.click("text=+ Eintrag");
+  await page.waitForSelector(`text=${callNote}`, { timeout: 10_000 });
+
+  // Wiedervorlage auf gestern setzen → muss sofort als fällig gelten
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const yKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`;
+  await page.fill('input[aria-label="Wiedervorlage-Datum"]', yKey);
+  await page.fill('input[placeholder*="Angebot nachfassen"]', "E2E nachfassen");
+  await page.click('button:has-text("Setzen")');
+  await page.waitForSelector("text=Fällig seit", { timeout: 10_000 });
+
+  // Reload — Brand-Felder, Kontakt, Aufgabe und Historie müssen persistent sein
   await page.reload();
   assert(
     (await page.inputValue('textarea[placeholder="Was soll erreicht werden?"]')) === "Mehr Laufkundschaft",
@@ -60,4 +75,17 @@ export default async function run({ page, baseUrl }) {
   assert(await page.locator("text=Frauke Beispiel").isVisible(), "Ansprechpartner nicht persistent");
   const checkbox = page.locator(`text=${taskTitle}`).locator("..").locator('input[type="checkbox"]');
   assert(await checkbox.isChecked(), "Aufgaben-Status (erledigt) nicht persistent");
+  assert(await page.locator(`text=${callNote}`).isVisible(), "Kontakt-Historie nicht persistent");
+
+  // Fällige Wiedervorlage erscheint als Erinnerung auf jeder Seite
+  await page.goto(page.url().replace(/\/app\/.*$/, "/app/planner"));
+  await page.waitForSelector("text=Wiedervorlage:", { timeout: 10_000 });
+  assert(
+    await page.locator("text=E2E nachfassen").isVisible(),
+    "Wiedervorlage-Banner fehlt trotz fälligem Datum"
+  );
+
+  // "Erledigt" räumt die Erinnerung weg
+  await page.click('button:has-text("✓ Erledigt")');
+  await page.waitForSelector("text=Wiedervorlage:", { state: "detached", timeout: 10_000 });
 }

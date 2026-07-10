@@ -434,6 +434,22 @@ export async function createClientAction(input: unknown): Promise<ActionResult> 
   return ok();
 }
 
+/**
+ * Wiedervorlage als erledigt markieren (aus dem Erinnerungs-Banner heraus).
+ * Das Setzen läuft über crm-actions.setFollowUpAction (Kundenprofil) — hier
+ * nur das Löschen, weil der Banner das frische Workspace-Bundle braucht.
+ */
+export async function clearClientFollowUpAction(id: string): Promise<ActionResult> {
+  const g = await guard("accounts");
+  if (g.denied) return g.denied;
+  const { workspace } = g.ctx;
+  await db.client.updateMany({
+    where: { id, workspaceId: workspace.id },
+    data: { followUpAt: null, followUpNote: null },
+  });
+  return ok();
+}
+
 export async function updateClientAction(id: string, input: unknown): Promise<ActionResult> {
   const g = await guard("accounts");
   if (g.denied) return g.denied;

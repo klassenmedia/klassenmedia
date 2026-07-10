@@ -4,79 +4,70 @@ import { ThemeToggle } from "@/components/theme-toggle";
 const FEATURES = [
   {
     icon: "∞",
-    title: "Unbegrenzte Accounts",
-    text: "Verbinde so viele Profile, wie du willst — Instagram, TikTok, LinkedIn, Facebook, YouTube, X und Pinterest. Kein Tarif limitiert deine Accounts.",
-  },
-  {
-    icon: "📅",
-    title: "Planen ohne Horizont",
-    text: "Plane Wochen, Monate oder ein ganzes Jahr im Voraus. Serien, Kampagnen und wiederkehrende Slots inklusive.",
-  },
-  {
-    icon: "✨",
-    title: "KI, wie du sie willst",
-    text: "Captions, Content-Ideen und Bilder per KI. Nutze dein Credit-Kontingent — oder binde deinen eigenen API-Key ein und zahle nur, was du beim Anbieter verbrauchst.",
+    title: "Unbegrenzte Accounts & Kunden",
+    text: "Verbinde so viele Profile und lege so viele Kunden an, wie du betreust — Instagram, TikTok, LinkedIn, Facebook, YouTube, Pinterest und die Kunden-Website. Nichts davon kostet extra.",
   },
   {
     icon: "🗂",
-    title: "Workspaces für Agenturen",
-    text: "Ein Workspace pro Kunde, sauber getrennt. Teammitglieder, Rollen und Freigaben — gemacht für Agentur-Workflows.",
+    title: "Ein Klick, ein Kunde",
+    text: "Der Kunden-Umschalter stellt die ganze App auf einen Mandanten um: Planer, Board, Inbox, Accounts und Ads zeigen nur noch diesen Kunden. Kein Durcheinander, kein zweiter Login.",
   },
   {
-    icon: "🖼",
-    title: "Bilder direkt generieren",
-    text: "Kein Stock-Foto-Frust: Beschreibe dein Wunschbild und plane es direkt in den Post ein.",
+    icon: "📇",
+    title: "CRM eingebaut",
+    text: "Stammdaten, Marke & Strategie, Ansprechpartner, To-dos — plus Kontakt-Historie für Telefonate und Meetings und Wiedervorlagen, die dich automatisch erinnern, dranzubleiben.",
+  },
+  {
+    icon: "✅",
+    title: "Freigaben ohne E-Mail-Pingpong",
+    text: "Kanban-Board von Entwurf bis Veröffentlicht, Freigabe-Links für Kunden ohne eigenes Login, Änderungswünsche mit Kommentar — alles protokolliert.",
+  },
+  {
+    icon: "✨",
+    title: "KI zu deinen Konditionen",
+    text: "Captions, Content-Ideen, Bilder und Klartext-Learnings aus deinen Zahlen. Mit inkludierten Credits — oder deinem eigenen API-Key ganz ohne Aufschlag.",
+  },
+  {
+    icon: "📰",
+    title: "Auch Blog & Website",
+    text: "Blogartikel für die Kunden-Website planen und automatisch auf WordPress veröffentlichen — im selben Kalender wie die Social-Beiträge.",
+  },
+  {
+    icon: "📣",
+    title: "Beiträge bewerben",
+    text: "Gut gelaufene Posts direkt aus dem Tool auf Instagram und Facebook boosten — mit Ziel, Budget, Laufzeit und Kennzahlen auf einen Blick.",
   },
   {
     icon: "🔔",
-    title: "Zuverlässiges Publishing",
-    text: "Automatische Veröffentlichung mit Wiederholversuchen und Benachrichtigung, falls eine Plattform zickt.",
+    title: "Ehrlicher Reel-Modus",
+    text: "Trending-Sounds lassen sich über keine API wählen — bei uns kein leeres Versprechen: Planbar erinnert dich zur geplanten Zeit und du postest mit Sound direkt in der App.",
+  },
+  {
+    icon: "🤖",
+    title: "Mit Claude verbunden",
+    text: "Eigener MCP-Connector: Plane Beiträge direkt aus dem Claude-Chat — „Leg für die Bäckerei drei Posts für nächste Woche an“ — und sie landen fertig im Kalender.",
   },
 ];
 
-const PRICING = [
-  {
-    name: "Starter",
-    price: "19 €",
-    tagline: "Für Solo-Creator und Einzelunternehmen",
-    features: [
-      "Unbegrenzte Social Accounts",
-      "1 Workspace · 1 Nutzer",
-      "100 KI-Credits / Monat",
-      "Eigener API-Key möglich",
-    ],
-    highlight: false,
-  },
-  {
-    name: "Pro",
-    price: "49 €",
-    tagline: "Für Teams und wachsende Marken",
-    features: [
-      "Unbegrenzte Social Accounts",
-      "3 Workspaces · 5 Teammitglieder",
-      "500 KI-Credits / Monat",
-      "Freigabe-Workflow & Kampagnen",
-    ],
-    highlight: true,
-  },
-  {
-    name: "Agency",
-    price: "129 €",
-    tagline: "Für Agenturen mit vielen Kunden",
-    features: [
-      "Unbegrenzte Social Accounts",
-      "Unbegrenzte Workspaces & Team",
-      "2.000 KI-Credits / Monat",
-      "White-Label & Kunden-Freigaben",
-    ],
-    highlight: false,
-  },
+const PLAN_FEATURES = [
+  "Unbegrenzte Social Accounts & Kunden",
+  "Unbegrenzte Teammitglieder mit Rollen & Freigaben",
+  "CRM mit Kontakt-Historie & Wiedervorlage",
+  "Kanban-Board, Kalender & Kunden-Freigabelinks",
+  "KI-Credits inklusive — eigener API-Key möglich",
+  "Blog/WordPress-Kanal & Ads-Modul",
+  "Analytics mit Klartext-Learnings",
+  "Claude-Anbindung (MCP)",
 ];
 
 const FAQ = [
   {
-    q: "Wirklich unbegrenzt viele Accounts?",
-    a: "Ja. Bei uns kostet kein zusätzliches Profil extra — in keinem Tarif. Wir differenzieren über Workspaces, Teamgrößen und KI-Kontingente, nicht über deine Reichweite.",
+    q: "Warum nur ein Tarif?",
+    a: "Weil Tarif-Mathematik nervt. Ein Preis, alles drin, keine Limits bei Accounts, Kunden oder Teamgröße. Du sollst nicht rechnen müssen, ob sich ein weiterer Kunde „lohnt“.",
+  },
+  {
+    q: "Wirklich unbegrenzt viele Accounts und Kunden?",
+    a: "Ja. Kein zusätzliches Profil und kein zusätzlicher Kunde kostet extra. Planbar ist für Social-Media-Manager:innen gebaut, die 10, 15 oder mehr Kunden mit je mehreren Accounts betreuen.",
   },
   {
     q: "Wie funktioniert die KI-Unterstützung?",
@@ -84,11 +75,11 @@ const FAQ = [
   },
   {
     q: "Kann ich jederzeit kündigen?",
-    a: "Ja, monatlich kündbar, direkt im Kundenportal. Bei jährlicher Zahlung schenken wir dir 2 Monate.",
+    a: "Ja, monatlich kündbar, direkt im Kundenportal — ohne Anruf, ohne Frist-Tricks.",
   },
   {
     q: "Welche Plattformen werden unterstützt?",
-    a: "Instagram, Facebook, TikTok, LinkedIn, YouTube, X (Twitter) und Pinterest — weitere folgen laufend.",
+    a: "Instagram, Facebook, TikTok, LinkedIn, YouTube und Pinterest — plus die eigene Website per WordPress. Weitere folgen laufend.",
   },
 ];
 
@@ -111,11 +102,14 @@ export default function LandingPage() {
           </nav>
           <div className="flex items-center gap-3">
             <ThemeToggle />
+            <Link href="/login" className="hidden text-sm text-muted transition hover:text-foreground sm:block">
+              Einloggen
+            </Link>
             <Link
-              href="/app"
+              href="/register"
               className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-contrast transition hover:brightness-110"
             >
-              Demo öffnen
+              Kostenlos starten
             </Link>
           </div>
         </div>
@@ -136,18 +130,18 @@ export default function LandingPage() {
             Früher Zugang — 14 Tage kostenlos testen
           </div>
           <h1 className="text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
-            Social Media planen.
+            Alle Kunden. Alle Kanäle.
             <br />
-            <span className="text-accent-fg">Ohne Account-Limits.</span>
+            <span className="text-accent-fg">Ein Login.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted">
-            Planbar ist das Planungstool für alle, die mehr als drei Profile betreuen:
-            unbegrenzte Accounts, Planung so weit im Voraus, wie du willst, und
-            KI-Unterstützung zu deinen Konditionen.
+            Planbar ist das Tool für Social-Media-Manager:innen und Agenturen mit vielen Kunden:
+            unbegrenzte Accounts, eingebautes CRM, Freigaben ohne E-Mail-Pingpong und
+            KI-Unterstützung zu deinen Konditionen — alles in einem Abo.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
-              href="/app"
+              href="/register"
               className="rounded-xl bg-accent px-6 py-3 font-medium text-accent-contrast transition hover:brightness-110"
             >
               Kostenlos testen
@@ -216,54 +210,45 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="mx-auto max-w-6xl px-6 py-20">
+      <section id="pricing" className="mx-auto w-full max-w-6xl px-6 py-20">
         <h2 className="text-center text-3xl font-semibold tracking-tight">
-          Faire Preise, keine Account-Mathematik
+          Ein Preis. Alles drin. Keine Limits.
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-center text-muted">
-          Jeder Tarif enthält unbegrenzte Social Accounts. Jährlich zahlen = 2 Monate geschenkt.
+          Keine Tarif-Mathematik, kein „ab“, keine Aufpreise pro Account, Kunde oder
+          Teammitglied. Ein Abo, das mit dir arbeitet statt gegen dich.
         </p>
-        <div className="mt-12 grid gap-5 lg:grid-cols-3">
-          {PRICING.map((p) => (
-            <div
-              key={p.name}
-              className={`relative flex flex-col rounded-2xl border bg-surface p-7 ${
-                p.highlight
-                  ? "border-accent shadow-[0_0_40px_color-mix(in_srgb,var(--accent)_15%,transparent)]"
-                  : "border-line"
-              }`}
-            >
-              {p.highlight && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-contrast">
-                  Am beliebtesten
-                </span>
-              )}
-              <h3 className="text-lg font-semibold">{p.name}</h3>
-              <p className="mt-1 text-sm text-muted">{p.tagline}</p>
-              <div className="mt-5">
-                <span className="text-4xl font-semibold">{p.price}</span>
-                <span className="text-muted"> / Monat</span>
-              </div>
-              <ul className="mt-6 flex flex-col gap-2.5 text-sm">
-                {p.features.map((f) => (
-                  <li key={f} className="flex gap-2.5 text-muted">
-                    <span className="text-success">✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/app"
-                className={`mt-8 rounded-xl px-4 py-2.5 text-center text-sm font-medium transition ${
-                  p.highlight
-                    ? "bg-accent text-accent-contrast hover:brightness-110"
-                    : "border border-line hover:bg-surface-2"
-                }`}
-              >
-                14 Tage kostenlos testen
-              </Link>
+        <div className="mx-auto mt-12 max-w-lg">
+          <div className="relative flex flex-col rounded-2xl border border-accent bg-surface p-8 shadow-[0_0_40px_color-mix(in_srgb,var(--accent)_15%,transparent)]">
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-contrast">
+              Der einzige Tarif
+            </span>
+            <h3 className="text-lg font-semibold">Komplett</h3>
+            <p className="mt-1 text-sm text-muted">
+              Für Social-Media-Manager:innen, Agenturen und Teams jeder Größe
+            </p>
+            <div className="mt-5">
+              <span className="text-5xl font-semibold">79 €</span>
+              <span className="text-muted"> / Monat</span>
             </div>
-          ))}
+            <ul className="mt-6 flex flex-col gap-2.5 text-sm">
+              {PLAN_FEATURES.map((f) => (
+                <li key={f} className="flex gap-2.5 text-muted">
+                  <span className="text-success">✓</span>
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/register"
+              className="mt-8 rounded-xl bg-accent px-4 py-3 text-center text-sm font-medium text-accent-contrast transition hover:brightness-110"
+            >
+              14 Tage kostenlos testen
+            </Link>
+            <p className="mt-3 text-center text-xs text-muted">
+              Keine Kreditkarte nötig · monatlich kündbar
+            </p>
+          </div>
         </div>
       </section>
 
@@ -302,7 +287,7 @@ export default function LandingPage() {
             Starte kostenlos und verbinde in 5 Minuten deine ersten Accounts.
           </p>
           <Link
-            href="/app"
+            href="/register"
             className="mt-7 inline-block rounded-xl bg-accent px-8 py-3 font-medium text-accent-contrast transition hover:brightness-110"
           >
             Jetzt kostenlos testen
@@ -317,7 +302,7 @@ export default function LandingPage() {
             <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent text-xs font-bold text-accent-contrast">
               P
             </span>
-            Planbar · Prototyp
+            Planbar
           </div>
           <div className="flex gap-6">
             <Link href="/impressum" className="transition hover:text-foreground">Impressum</Link>

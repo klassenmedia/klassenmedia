@@ -132,18 +132,20 @@ const NAV = [
 ];
 
 /**
- * Erinnerungs-Modus (Reels): statt Push-Benachrichtigungen (keine native App)
- * eine persistente Banner-Erinnerung auf jeder Seite, sobald ein Post fällig
- * ist, dessen Sound manuell in der Instagram-App gewählt werden muss.
+ * Erinnerungs-Banner auf jeder Seite (statt Push — keine native App):
+ * fällige Reel-Posts (Trending-Sound manuell wählen) und fällige
+ * Kunden-Wiedervorlagen aus dem CRM.
  */
 function RemindersBanner() {
-  const { posts, accounts, markReminderPosted } = useStore();
-  const due = posts.filter((p) => p.reminderDue);
-  if (due.length === 0) return null;
+  const { posts, accounts, clients, markReminderPosted, clearClientFollowUp, can } = useStore();
+  const duePosts = posts.filter((p) => p.reminderDue);
+  const dueFollowUps = can("accounts") ? clients.filter((c) => c.followUpDue) : [];
+  const total = duePosts.length + dueFollowUps.length;
+  if (total === 0) return null;
 
   return (
     <div className="flex flex-col gap-2 border-b border-warning/40 bg-warning/10 px-8 py-3">
-      {due.slice(0, 3).map((p) => {
+      {duePosts.slice(0, 3).map((p) => {
         const acc = accounts.find((id) => p.accountIds.includes(id.id));
         return (
           <div key={p.id} className="flex flex-wrap items-center gap-3 text-sm">
@@ -161,8 +163,29 @@ function RemindersBanner() {
           </div>
         );
       })}
-      {due.length > 3 && (
-        <div className="text-xs text-muted">+{due.length - 3} weitere Erinnerungen</div>
+      {dueFollowUps.slice(0, 3).map((c) => (
+        <div key={c.id} className="flex flex-wrap items-center gap-3 text-sm">
+          <span className="shrink-0">📞</span>
+          <span className="min-w-0 flex-1 truncate">
+            Wiedervorlage: <strong className="font-medium">{c.name}</strong>
+            {c.followUpNote ? ` — ${c.followUpNote}` : " — beim Kunden melden."}
+          </span>
+          <Link
+            href={`/app/clients/${c.id}`}
+            className="shrink-0 rounded-lg border border-warning/40 px-2.5 py-1 text-xs font-medium text-warning transition hover:bg-warning/15"
+          >
+            Profil öffnen
+          </Link>
+          <button
+            onClick={() => clearClientFollowUp(c.id)}
+            className="shrink-0 rounded-lg border border-warning/40 px-2.5 py-1 text-xs font-medium text-warning transition hover:bg-warning/15"
+          >
+            ✓ Erledigt
+          </button>
+        </div>
+      ))}
+      {total > duePosts.slice(0, 3).length + dueFollowUps.slice(0, 3).length && (
+        <div className="text-xs text-muted">+ weitere Erinnerungen</div>
       )}
     </div>
   );

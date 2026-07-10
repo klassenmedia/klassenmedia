@@ -1,5 +1,7 @@
 "use client";
 
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui";
 
@@ -13,21 +15,47 @@ const STATUS_LABELS: Record<string, string> = {
 const PRICE = 79;
 
 const FEATURES = [
-  "Unbegrenzte Kunden",
-  "Unbegrenzte Social Accounts",
-  "Unbegrenzter Planungshorizont",
-  "Alle Formate (Text, Bild, Video, Karussell, Story)",
-  "Kalender & Kanban-Board",
-  "Team & Rollen (Redakteur:in, Admin …)",
+  "Unbegrenzte Kunden & Social Accounts",
+  "Unbegrenztes Team mit Rollen",
+  "Kalender, Kanban-Board & Formate bis Karussell (20)",
+  "CRM: Kontakt-Historie & Wiedervorlage",
   "Freigabe-Workflow + Kunden-Freigabelinks",
   "Inbox (Kommentare beantworten)",
-  "Analytics & Reporting",
-  "KI für Texte & Bilder inklusive",
+  "Analytics mit Klartext-Learnings",
+  "KI für Texte & Bilder inklusive (+ eigener Key möglich)",
+  "Blog/WordPress-Kanal & Ads-Modul",
+  "Claude-Anbindung (MCP)",
 ];
 
+/** Feedback nach Rückkehr aus dem Stripe-Checkout (?checkout=success|cancel). */
+function CheckoutNotice() {
+  const params = useSearchParams();
+  const state = params.get("checkout");
+  if (state === "success") {
+    return (
+      <div className="mb-6 rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-sm text-success">
+        🎉 Danke! Dein Abo ist eingerichtet — die Bestätigung von Stripe kommt per E-Mail. Der
+        Status unten aktualisiert sich, sobald Stripe die Zahlung gemeldet hat.
+      </div>
+    );
+  }
+  if (state === "cancel") {
+    return (
+      <div className="mb-6 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
+        Checkout abgebrochen — es wurde nichts berechnet. Du kannst jederzeit erneut abonnieren.
+      </div>
+    );
+  }
+  return null;
+}
+
 export default function BillingPage() {
-  const { billing, openCustomerPortal, checkoutPlan } = useStore();
-  const active = billing.subscriptionStatus === "active" || billing.subscriptionStatus === "trialing";
+  const { billing, plan, openCustomerPortal, checkoutPlan } = useStore();
+  const active =
+    billing.subscriptionStatus === "active" ||
+    billing.subscriptionStatus === "trialing" ||
+    // Demo-Modus ohne Stripe: "Abonnieren (Demo)" setzt den Plan direkt
+    (!billing.stripeConfigured && plan === "agency");
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -38,6 +66,10 @@ export default function BillingPage() {
         </p>
       </div>
 
+      <Suspense fallback={null}>
+        <CheckoutNotice />
+      </Suspense>
+
       <div className="rounded-2xl border border-accent bg-surface p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -46,14 +78,14 @@ export default function BillingPage() {
           </div>
           {active && (
             <span className="rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-contrast">
-              Aktiv
+              {billing.subscriptionStatus === "trialing" ? "Testphase" : "Aktiv"}
             </span>
           )}
         </div>
 
         <div className="mt-5">
           <span className="text-4xl font-semibold">{PRICE} €</span>
-          <span className="text-sm text-muted"> / Monat · monatlich kündbar</span>
+          <span className="text-sm text-muted"> / Monat · 14 Tage kostenlos · monatlich kündbar</span>
         </div>
 
         <ul className="mt-6 grid gap-2 text-sm sm:grid-cols-2">
@@ -72,7 +104,7 @@ export default function BillingPage() {
             </Button>
           ) : (
             <Button className="w-full sm:w-auto" onClick={() => checkoutPlan("agency")}>
-              {billing.stripeConfigured ? "Jetzt abonnieren" : "Abonnieren (Demo)"}
+              {billing.stripeConfigured ? "14 Tage kostenlos testen" : "Abonnieren (Demo)"}
             </Button>
           )}
         </div>
@@ -94,7 +126,7 @@ export default function BillingPage() {
         <p className="mt-2 text-sm text-muted">
           {billing.stripeConfigured
             ? "Zahlungsmethode ändern, Rechnungen herunterladen, Abo kündigen — alles Self-Service im Stripe-Kundenportal."
-            : "Stripe ist lokal noch nicht konfiguriert — mit STRIPE_SECRET_KEY in der .env läuft der Checkout über echten Stripe (14 Tage Trial inklusive). Ohne Key gilt der Demo-Modus."}
+            : "Stripe ist noch nicht konfiguriert — mit STRIPE_SECRET_KEY und STRIPE_WEBHOOK_SECRET in der .env läuft der Checkout über echten Stripe (14 Tage Trial inklusive). Ohne Keys gilt der Demo-Modus."}
         </p>
         <Button
           variant="ghost"

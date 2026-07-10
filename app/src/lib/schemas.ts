@@ -101,6 +101,21 @@ export const adCampaignSchema = z
 
 export const apiTokenNameSchema = z.string().trim().min(1, "Bitte einen Namen angeben").max(80);
 
+// CRM: Kontakt-Historie (Telefonat/E-Mail/Meeting/Notiz) + Wiedervorlage
+export const INTERACTION_KINDS = ["call", "email", "meeting", "note"] as const;
+
+export const interactionSchema = z.object({
+  kind: z.enum(INTERACTION_KINDS),
+  text: z.string().trim().min(1, "Bitte kurz notieren, worum es ging").max(2000),
+  happenedAt: z.string().regex(DATE_RE, "Datum im Format JJJJ-MM-TT").optional(),
+});
+
+export const followUpSchema = z.object({
+  // null = Wiedervorlage entfernen
+  date: z.string().regex(DATE_RE, "Datum im Format JJJJ-MM-TT").nullable(),
+  note: z.string().trim().max(300).optional(),
+});
+
 // MCP-Connector: Beitrag per Claude/Tool-Aufruf anlegen — bewusst schlanker
 // als postSchema (kein Medien-Upload, keine Freigabe-Einreichung über MCP).
 export const mcpCreatePostSchema = z

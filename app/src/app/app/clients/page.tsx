@@ -53,8 +53,9 @@ export default function ClientsPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Kunden</h1>
         <p className="mt-1 text-sm text-muted">
-          Gruppiere die Accounts deiner Kunden. Mit dem Kunden-Filter links siehst du überall nur
-          diesen Kunden — oder alle auf einen Blick.
+          Alle Mandanten deiner Agentur an einem Ort. Über den Kunden-Umschalter oben arbeitest du
+          überall sauber im Kontext eines Kunden — im Profil liegen Stammdaten, Kontakt-Historie
+          und Wiedervorlage.
         </p>
       </div>
 
@@ -130,6 +131,16 @@ export default function ClientsPage() {
                   <div className="mt-1 text-xs text-muted">
                     {c.accountCount} {c.accountCount === 1 ? "Account" : "Accounts"} · {c.postCount} Posts
                   </div>
+                  {c.followUpAt && (
+                    <div
+                      className={`mt-2 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium ${
+                        c.followUpDue ? "bg-warning/15 text-warning" : "bg-surface-2 text-muted"
+                      }`}
+                    >
+                      🔔 Wiedervorlage {c.followUpAt.split("-").reverse().join(".")}
+                      {c.followUpDue ? " — fällig" : ""}
+                    </div>
+                  )}
 
                   <div className="mt-4 flex flex-wrap gap-2">
                     {accs.length === 0 ? (

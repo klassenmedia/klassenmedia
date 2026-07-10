@@ -5,12 +5,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { Button, inputCls, PlatformChip } from "@/components/ui";
-import type { ClientDetail } from "@/lib/types";
+import {
+  INTERACTION_LABELS,
+  toDateKey,
+  type ClientDetail,
+  type InteractionKind,
+} from "@/lib/types";
 import {
   addContactAction,
+  addInteractionAction,
   addTaskAction,
   deleteContactAction,
+  deleteInteractionAction,
   deleteTaskAction,
+  setFollowUpAction,
   toggleTaskAction,
   updateClientProfileAction,
   type CrmResult,
@@ -52,6 +60,16 @@ export function ClientDetailView({
   // Aufgaben
   const [tTitle, setTTitle] = useState("");
   const [tDue, setTDue] = useState("");
+
+  // Kontakt-Historie
+  const [iKind, setIKind] = useState<InteractionKind>("call");
+  const [iText, setIText] = useState("");
+  const [iDate, setIDate] = useState(toDateKey(new Date()));
+
+  // Wiedervorlage
+  const [fuDate, setFuDate] = useState(initial.followUpAt ?? "");
+  const [fuNote, setFuNote] = useState(initial.followUpNote ?? "");
+  const [savingFu, setSavingFu] = useState(false);
 
   function apply(res: CrmResult): boolean {
     if (res.detail) setDetail(res.detail);
@@ -113,6 +131,33 @@ export function ClientDetailView({
     }
   }
 
+  async function addInteraction() {
+    if (!iText.trim()) return;
+    const ok = apply(
+      await addInteractionAction(detail.id, {
+        kind: iKind,
+        text: iText.trim(),
+        happenedAt: iDate || undefined,
+      })
+    );
+    if (ok) {
+      setIText("");
+      setIDate(toDateKey(new Date()));
+    }
+  }
+
+  async function saveFollowUp(date: string | null) {
+    setSavingFu(true);
+    const ok = apply(
+      await setFollowUpAction(detail.id, { date, note: date ? fuNote.trim() || undefined : undefined })
+    );
+    setSavingFu(false);
+    if (ok && !date) {
+      setFuDate("");
+      setFuNote("");
+    }
+  }
+
   function openInContext() {
     setSelectedClient(detail.id);
     router.push("/app/planner");
@@ -146,6 +191,63 @@ export function ClientDetailView({
           {err}
         </div>
       )}
+
+      {/* Wiedervorlage */}
+      {(() => {
+        const due = detail.followUpAt !== null && detail.followUpAt <= toDateKey(new Date());
+        return (
+          <section
+            className={`mb-6 rounded-2xl border p-6 ${
+              due ? "border-warning/50 bg-warning/10" : "border-line bg-surface"
+            }`}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-semibold">🔔 Wiedervorlage</h2>
+              {detail.followUpAt ? (
+                <span className={`text-sm ${due ? "font-medium text-warning" : "text-muted"}`}>
+                  {due ? "Fällig seit" : "Wieder melden am"}{" "}
+                  {detail.followUpAt.split("-").reverse().join(".")}
+                  {detail.followUpNote ? ` — ${detail.followUpNote}` : ""}
+                </span>
+              ) : (
+                <span className="text-sm text-muted">Keine Wiedervorlage gesetzt.</span>
+              )}
+            </div>
+            {canEdit && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <input
+                  type="date"
+                  value={fuDate}
+                  onChange={(e) => setFuDate(e.target.value)}
+                  aria-label="Wiedervorlage-Datum"
+                  className="rounded-xl border border-line bg-surface px-3 py-2 text-sm"
+                />
+                <input
+                  value={fuNote}
+                  onChange={(e) => setFuNote(e.target.value)}
+                  placeholder="Worum geht es? (z. B. Angebot nachfassen)"
+                  className={`${inputCls} min-w-52 flex-1`}
+                />
+                <Button
+                  onClick={() => saveFollowUp(fuDate)}
+                  disabled={!fuDate || savingFu}
+                  className="shrink-0"
+                >
+                  {savingFu ? "Speichert …" : "Setzen"}
+                </Button>
+                {detail.followUpAt && (
+                  <Button variant="ghost" onClick={() => saveFollowUp(null)} disabled={savingFu} className="shrink-0">
+                    ✓ Erledigt
+                  </Button>
+                )}
+              </div>
+            )}
+            <p className="mt-2 text-xs text-muted">
+              Am gesetzten Datum erinnert dich Planbar auf jeder Seite, dich bei diesem Kunden zu melden.
+            </p>
+          </section>
+        );
+      })()}
 
       {/* Stammdaten */}
       <section className="mb-6 rounded-2xl border border-line bg-surface p-6">
@@ -285,6 +387,87 @@ export function ClientDetailView({
             </div>
           </div>
         )}
+      </section>
+
+      {/* Kontakt-Historie */}
+      <section className="mb-6 rounded-2xl border border-line bg-surface p-6">
+        <h2 className="font-semibold">Kontakt-Historie ({detail.interactions.length})</h2>
+        <p className="mt-1 text-sm text-muted">
+          Telefonate, E-Mails und Meetings protokollieren — damit jeder im Team weiß, was zuletzt
+          besprochen wurde.
+        </p>
+
+        {canEdit && (
+          <div className="mt-4 rounded-xl border border-line bg-surface-2 p-3.5">
+            <div className="flex flex-wrap items-center gap-2">
+              {(Object.keys(INTERACTION_LABELS) as InteractionKind[]).map((k) => (
+                <button
+                  key={k}
+                  onClick={() => setIKind(k)}
+                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm transition ${
+                    iKind === k
+                      ? "border-accent bg-accent-soft text-foreground"
+                      : "border-line text-muted hover:border-accent/40"
+                  }`}
+                >
+                  {INTERACTION_LABELS[k].icon} {INTERACTION_LABELS[k].label}
+                </button>
+              ))}
+              <input
+                type="date"
+                value={iDate}
+                onChange={(e) => setIDate(e.target.value)}
+                aria-label="Datum des Kontakts"
+                className="ml-auto rounded-xl border border-line bg-surface px-3 py-1.5 text-sm"
+              />
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <textarea
+                value={iText}
+                onChange={(e) => setIText(e.target.value)}
+                rows={2}
+                placeholder={
+                  iKind === "call"
+                    ? "Worüber habt ihr telefoniert? Ergebnis, nächste Schritte …"
+                    : "Was wurde besprochen / vereinbart?"
+                }
+                className={`${inputCls} flex-1`}
+              />
+              <Button onClick={addInteraction} disabled={!iText.trim()} className="shrink-0 self-end">
+                + Eintrag
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-4 flex flex-col gap-2">
+          {detail.interactions.length === 0 && (
+            <p className="text-sm text-muted">Noch keine Einträge — protokolliere oben den ersten Kontakt.</p>
+          )}
+          {detail.interactions.map((entry) => (
+            <div key={entry.id} className="group/entry flex gap-3 rounded-xl px-2 py-2 hover:bg-surface-2">
+              <span className="mt-0.5 shrink-0 text-base" title={INTERACTION_LABELS[entry.kind].label}>
+                {INTERACTION_LABELS[entry.kind].icon}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs text-muted">
+                  {INTERACTION_LABELS[entry.kind].label} · {entry.happenedAt.split("-").reverse().join(".")} ·{" "}
+                  {entry.createdBy}
+                </div>
+                <p className="mt-0.5 whitespace-pre-wrap text-sm">{entry.text}</p>
+              </div>
+              {canEdit && (
+                <button
+                  onClick={async () => apply(await deleteInteractionAction(entry.id))}
+                  aria-label="Eintrag löschen"
+                  className="h-fit rounded-lg px-2 py-0.5 text-sm text-muted opacity-0 transition group-hover/entry:opacity-100 hover:bg-danger/15 hover:text-danger"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Aufgaben */}

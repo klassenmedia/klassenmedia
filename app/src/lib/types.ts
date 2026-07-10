@@ -37,6 +37,16 @@ export interface ClientItem {
   color: string;
   accountCount: number;
   postCount: number;
+  /** Wiedervorlage-Datum (yyyy-mm-dd) — null = keine gesetzt */
+  followUpAt: string | null;
+  followUpNote: string | null;
+  /** true = Wiedervorlage ist heute fällig oder überfällig */
+  followUpDue: boolean;
+}
+
+/** Ist eine Wiedervorlage fällig? (Datum erreicht oder überschritten, in lokaler Zeit) */
+export function isFollowUpDue(followUpAt: string | null, todayKey: string): boolean {
+  return followUpAt !== null && followUpAt <= todayKey;
 }
 
 // ── CRM: Kunden-Profil ────────────────────────────────────────────────
@@ -57,6 +67,24 @@ export interface ClientTaskItem {
   createdAt: string;
 }
 
+// Kontakt-Historie: Telefonat, E-Mail, Meeting oder freie Notiz
+export type InteractionKind = "call" | "email" | "meeting" | "note";
+
+export const INTERACTION_LABELS: Record<InteractionKind, { label: string; icon: string }> = {
+  call: { label: "Telefonat", icon: "📞" },
+  email: { label: "E-Mail", icon: "✉️" },
+  meeting: { label: "Meeting", icon: "🤝" },
+  note: { label: "Notiz", icon: "📝" },
+};
+
+export interface ClientInteractionItem {
+  id: string;
+  kind: InteractionKind;
+  text: string;
+  happenedAt: string; // yyyy-mm-dd
+  createdBy: string;
+}
+
 export interface ClientDetail {
   id: string;
   name: string;
@@ -70,9 +98,12 @@ export interface ClientDetail {
   brandColors: string | null;
   fonts: string | null;
   hashtags: string | null;
+  followUpAt: string | null; // yyyy-mm-dd
+  followUpNote: string | null;
   accounts: { id: string; platform: Platform; handle: string }[];
   contacts: ClientContactItem[];
   tasks: ClientTaskItem[];
+  interactions: ClientInteractionItem[];
   postCount: number;
 }
 

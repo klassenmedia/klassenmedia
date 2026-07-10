@@ -36,6 +36,7 @@ npm run test:e2e # E2E-Suite (Playwright) — baut die App, startet sie gegen ei
 | Kanban-Board (Pipeline: Entwurf → In Freigabe → Geplant → Veröffentlicht, Drag-and-drop) | ✅ echt — Verschieben/Freigeben rollen-geprüft |
 | Kunden-Ebene + Kontext-Umschalter (Kunde wählen → alles zeigt nur ihn, übersteht Reloads) | ✅ echt — eine Agentur, ein Abo, viele Kunden sauber getrennt |
 | CRM: Kunden-Profil (Stammdaten, Marke & Strategie, Ansprechpartner, Notizen, To-dos) | ✅ echt — schlankes CRM je Kunde, rollen-geprüft |
+| CRM: Kontakt-Historie (Telefonat/E-Mail/Meeting/Notiz) + Wiedervorlage | ✅ echt — fällige Wiedervorlagen erinnern automatisch auf jeder Seite (Banner + Dashboard) |
 | Externer Medien-Link (großes Video per Dropbox/Drive-URL) | ✅ am Beitrag, im Composer & in der Freigabe direkt anklickbar |
 | Karussell bis 20 Folien | ✅ (organisch; Ads-Hinweis: nur 10) |
 | Bild-Upload im Composer | ✅ echt (lokales Dateisystem, `public/uploads/`) |

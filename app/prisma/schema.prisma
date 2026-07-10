@@ -119,15 +119,34 @@ model Client {
   brandColors String? // Farben
   fonts       String? // Schriften
   hashtags    String? // Standard-Hashtags
+  // Wiedervorlage: an diesem Datum erinnert das Tool, sich beim Kunden zu melden
+  followUpAt   DateTime?
+  followUpNote String?
   createdAt   DateTime        @default(now())
   accounts    SocialAccount[]
   posts       Post[]
   invites     ConnectionInvite[]
   contacts    ClientContact[]
   tasks       ClientTask[]
+  interactions ClientInteraction[]
   adCampaigns AdCampaign[]
 
   @@index([workspaceId])
+}
+
+// Kontakt-Historie: protokolliert Telefonate, E-Mails, Meetings und Notizen
+// je Kunde — das Gedächtnis der Agentur ("worüber haben wir zuletzt gesprochen?").
+model ClientInteraction {
+  id         String   @id @default(cuid())
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId   String
+  kind       String // call | email | meeting | note
+  text       String
+  happenedAt DateTime @default(now())
+  createdBy  String // Name der protokollierenden Person
+  createdAt  DateTime @default(now())
+
+  @@index([clientId, happenedAt])
 }
 
 // Ansprechpartner beim Kunden

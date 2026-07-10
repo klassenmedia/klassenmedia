@@ -15,6 +15,7 @@ import {
   CommentItem,
   ConnectionInvite,
   CreditEntry,
+  isFollowUpDue,
   Platform,
   PlanTier,
   Post,
@@ -212,13 +213,19 @@ export async function getWorkspaceBundle(
         ? fmtDate(workspace.currentPeriodEnd)
         : null,
     },
-    clients: clientRows.map((c) => ({
-      id: c.id,
-      name: c.name,
-      color: c.color,
-      accountCount: c._count.accounts,
-      postCount: c._count.posts,
-    })),
+    clients: clientRows.map((c) => {
+      const followUpAt = c.followUpAt ? dateKey(c.followUpAt) : null;
+      return {
+        id: c.id,
+        name: c.name,
+        color: c.color,
+        accountCount: c._count.accounts,
+        postCount: c._count.posts,
+        followUpAt,
+        followUpNote: c.followUpNote,
+        followUpDue: isFollowUpDue(followUpAt, dateKey(new Date())),
+      };
+    }),
     accounts: accounts.map((a) => ({
       id: a.id,
       platform: a.platform as Platform,

@@ -8,8 +8,10 @@ import {
   changeRoleSchema,
   clientSchema,
   CREDIT_PACKAGES,
+  followUpSchema,
   FORMAT_MAX_MEDIA,
   imageSchema,
+  interactionSchema,
   inviteMemberSchema,
   inviteSchema,
   keysSchema,
@@ -174,6 +176,27 @@ describe("adCampaignSchema", () => {
 
   it("rejects an unknown objective", () => {
     expect(adCampaignSchema.safeParse({ ...valid, objective: "sales" }).success).toBe(false);
+  });
+});
+
+describe("interactionSchema / followUpSchema", () => {
+  it("accepts a call entry with optional date", () => {
+    expect(
+      interactionSchema.safeParse({ kind: "call", text: "Kurz telefoniert", happenedAt: "2026-07-10" })
+        .success
+    ).toBe(true);
+    expect(interactionSchema.safeParse({ kind: "note", text: "Nur Notiz" }).success).toBe(true);
+  });
+
+  it("rejects unknown kinds and empty text", () => {
+    expect(interactionSchema.safeParse({ kind: "fax", text: "x" }).success).toBe(false);
+    expect(interactionSchema.safeParse({ kind: "call", text: "  " }).success).toBe(false);
+  });
+
+  it("follow-up accepts a date with note and null to clear", () => {
+    expect(followUpSchema.safeParse({ date: "2026-08-01", note: "Nachfassen" }).success).toBe(true);
+    expect(followUpSchema.safeParse({ date: null }).success).toBe(true);
+    expect(followUpSchema.safeParse({ date: "01.08.2026" }).success).toBe(false);
   });
 });
 

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { FORMATS, isExternalLink, mediaBackground, PLATFORMS } from "@/lib/types";
+import {
+  FORMATS,
+  INTERACTION_LABELS,
+  isExternalLink,
+  isFollowUpDue,
+  mediaBackground,
+  PLATFORMS,
+} from "@/lib/types";
 
 describe("isExternalLink", () => {
   it("recognizes http(s) URLs", () => {
@@ -35,6 +42,26 @@ describe("FORMATS", () => {
 
   it("text posts carry no media", () => {
     expect(FORMATS.text.maxMedia).toBe(0);
+  });
+});
+
+describe("isFollowUpDue", () => {
+  const today = "2026-07-10";
+
+  it("is due on the exact day and when overdue", () => {
+    expect(isFollowUpDue("2026-07-10", today)).toBe(true);
+    expect(isFollowUpDue("2026-07-01", today)).toBe(true);
+  });
+
+  it("is not due for future dates or when unset", () => {
+    expect(isFollowUpDue("2026-07-11", today)).toBe(false);
+    expect(isFollowUpDue(null, today)).toBe(false);
+  });
+});
+
+describe("INTERACTION_LABELS", () => {
+  it("covers all four interaction kinds", () => {
+    expect(Object.keys(INTERACTION_LABELS).sort()).toEqual(["call", "email", "meeting", "note"]);
   });
 });
 

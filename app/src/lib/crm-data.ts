@@ -7,7 +7,7 @@ import "server-only";
 // mit dem geprüften workspaceId aufgerufen wird.
 
 import { db } from "./db";
-import type { ClientDetail, Platform } from "./types";
+import type { ClientDetail, InteractionKind, Platform } from "./types";
 
 function dateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -24,6 +24,7 @@ export async function getClientDetail(
       accounts: { orderBy: { connectedAt: "asc" } },
       contacts: { orderBy: { createdAt: "asc" } },
       tasks: { orderBy: [{ done: "asc" }, { createdAt: "asc" }] },
+      interactions: { orderBy: { happenedAt: "desc" }, take: 100 },
       _count: { select: { posts: true } },
     },
   });
@@ -53,12 +54,21 @@ export async function getClientDetail(
       email: k.email,
       phone: k.phone,
     })),
+    followUpAt: c.followUpAt ? dateKey(c.followUpAt) : null,
+    followUpNote: c.followUpNote,
     tasks: c.tasks.map((t) => ({
       id: t.id,
       title: t.title,
       done: t.done,
       dueDate: t.dueDate ? dateKey(t.dueDate) : null,
       createdAt: dateKey(t.createdAt),
+    })),
+    interactions: c.interactions.map((i) => ({
+      id: i.id,
+      kind: i.kind as InteractionKind,
+      text: i.text,
+      happenedAt: dateKey(i.happenedAt),
+      createdBy: i.createdBy,
     })),
     postCount: c._count.posts,
   };

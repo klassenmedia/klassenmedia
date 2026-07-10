@@ -9,6 +9,7 @@ import { db } from "./db";
 import { requireWorkspace } from "./auth";
 import { can } from "./permissions";
 import { getClientDetail } from "./crm-data";
+import { followUpSchema, interactionSchema } from "./schemas";
 import type { ClientDetail } from "./types";
 
 export type CrmResult = { ok: boolean; error?: string; detail?: ClientDetail };
@@ -143,4 +144,55 @@ export async function deleteTaskAction(taskId: string): Promise<CrmResult> {
   if (!task) return { ok: false, error: "Aufgabe nicht gefunden" };
   await db.clientTask.delete({ where: { id: taskId } });
   return detailResult(workspace.id, task.clientId);
+}
+
+// ── Kontakt-Historie (Telefonat / E-Mail / Meeting / Notiz) ────────────
+
+export async function addInteractionAction(clientId: string, input: unknown): Promise<CrmResult> {
+  const { workspace, user, role } = await requireWorkspace();
+  if (!can(role, "accounts")) return { ok: false, error: "Keine Berechtigung." };
+  const client = await db.client.findFirst({ where: { id: clientId, workspaceId: workspace.id } });
+  if (!client) return { ok: false, error: "Kunde nicht gefunden" };
+  const parsed = interactionSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  await db.clientInteraction.create({
+    data: {
+      clientId,
+      kind: parsed.data.kind,
+      text: parsed.data.text,
+      happenedAt: parsed.data.happenedAt
+        ? new Date(`${parsed.data.happenedAt}T12:00:00`)
+        : new Date(),
+      createdBy: user.name,
+    },
+  });
+  return detailResult(workspace.id, clientId);
+}
+
+export async function deleteInteractionAction(interactionId: string): Promise<CrmResult> {
+  const { workspace, role } = await requireWorkspace();
+  if (!can(role, "accounts")) return { ok: false, error: "Keine Berechtigung." };
+  const entry = await db.clientInteraction.findFirst({
+    where: { id: interactionId, client: { workspaceId: workspace.id } },
+  });
+  if (!entry) return { ok: false, error: "Eintrag nicht gefunden" };
+  await db.clientInteraction.delete({ where: { id: interactionId } });
+  return detailResult(workspace.id, entry.clientId);
+}
+
+// ── Wiedervorlage ("am … wieder beim Kunden melden") ───────────────────
+
+export async function setFollowUpAction(clientId: string, input: unknown): Promise<CrmResult> {
+  const ctx = await ctxForClient(clientId);
+  if (ctx.error) return { ok: false, error: ctx.error };
+  const parsed = followUpSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  await db.client.update({
+    where: { id: clientId },
+    data: {
+      followUpAt: parsed.data.date ? new Date(`${parsed.data.date}T00:00:00`) : null,
+      followUpNote: parsed.data.date ? parsed.data.note?.trim() || null : null,
+    },
+  });
+  return detailResult(ctx.workspaceId, clientId);
 }

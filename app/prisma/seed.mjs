@@ -219,6 +219,40 @@ async function main() {
     ],
   });
 
+  // Kontakt-Historie + fällige Wiedervorlage (zeigt das Erinnerungs-Banner in der Demo)
+  await db.clientInteraction.createMany({
+    data: [
+      {
+        clientId: clientBB.id,
+        kind: "call",
+        text: "Telefonat mit Frau Berger: Sommer-Kampagne besprochen, sie schickt Fotos aus der Backstube bis Freitag. Budget für Ads freigegeben (80 €).",
+        happenedAt: at(-2, 14, 30),
+        createdBy: "Andreas (Demo)",
+      },
+      {
+        clientId: clientBB.id,
+        kind: "email",
+        text: "Angebot für Content-Paket Q4 rausgeschickt — 12 Posts/Monat plus Blog.",
+        happenedAt: at(-6, 9, 0),
+        createdBy: "Andreas (Demo)",
+      },
+      {
+        clientId: clientBB.id,
+        kind: "meeting",
+        text: "Kickoff vor Ort: Markenwerte, No-Gos (keine Stockfotos), beste Posting-Zeiten morgens.",
+        happenedAt: at(-20, 11, 0),
+        createdBy: "Andreas (Demo)",
+      },
+    ],
+  });
+  await db.client.update({
+    where: { id: clientBB.id },
+    data: {
+      followUpAt: at(0, 0),
+      followUpNote: "Angebot Q4 nachfassen — Fotos angekommen?",
+    },
+  });
+
   // Ads-Demo: laufende Kampagne für den veröffentlichten Instagram-Post
   await db.adCampaign.create({
     data: {

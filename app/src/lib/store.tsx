@@ -39,6 +39,7 @@ import {
   addAccountAction,
   addWordPressAccountAction,
   createInviteAction,
+  clearClientFollowUpAction,
   createClientAction,
   updateClientAction,
   deleteClientAction,
@@ -151,6 +152,8 @@ interface Store {
   createClient: (name: string, color?: string) => Promise<boolean>;
   updateClient: (id: string, patch: { name?: string; color?: string }) => Promise<void>;
   deleteClient: (id: string) => Promise<void>;
+  /** Wiedervorlage als erledigt markieren (Erinnerungs-Banner) */
+  clearClientFollowUp: (id: string) => Promise<void>;
   assignAccount: (accountId: string, clientId: string | null) => Promise<void>;
   createInvite: (platform: Platform, clientName: string, clientId?: string | null) => Promise<void>;
   revokeInvite: (id: string) => Promise<void>;
@@ -263,6 +266,7 @@ export function StoreProvider({
       createClient: (name, color) => apply(createClientAction({ name, color })),
       updateClient: async (id, patch) => void (await apply(updateClientAction(id, patch))),
       deleteClient: async (id) => void (await apply(deleteClientAction(id))),
+      clearClientFollowUp: async (id) => void (await apply(clearClientFollowUpAction(id))),
       assignAccount: async (accountId, clientId) =>
         void (await apply(assignAccountAction(accountId, clientId))),
       createInvite: async (platform, clientName, clientId) =>

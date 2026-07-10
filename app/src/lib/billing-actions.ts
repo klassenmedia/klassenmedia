@@ -77,7 +77,8 @@ export async function checkoutPlanAction(tier: unknown): Promise<CheckoutResult>
           currency: "eur",
           unit_amount: PLAN_PRICES_EUR[parsed.data] * 100,
           recurring: { interval: "month" },
-          product_data: { name: `Planbar ${parsed.data} (monatlich)` },
+          // Ein Plan für alles — so heißt er auch auf der Stripe-Rechnung
+          product_data: { name: "Planbar Komplett (monatlich)" },
         },
       },
     ],
