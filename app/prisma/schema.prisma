@@ -1,0 +1,404 @@
+// Phase-1-Schema: läuft lokal mit SQLite (keine Installation nötig).
+// Für den Cloud-Umzug wird nur provider = "postgresql" gesetzt und die
+// String-Status-Felder werden wieder zu echten Enums (SQLite kann keine Enums).
+// Gültige Werte stehen als Kommentar an jedem Feld — die Validierung passiert
+// zusätzlich in den Server Actions (zod).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── Nutzer, Sessions & Mandanten ──────────────────────────────────────
+
+model User {
+  id           String            @id @default(cuid())
+  email        String            @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime          @default(now())
+  memberships  WorkspaceMember[]
+  sessions     Session[]
+}
+
+// Serverseitige Sessions: im Cookie liegt nur ein Zufallstoken,
+// in der DB nur dessen SHA-256-Hash (Diebstahl der DB ≠ gültige Sessions)
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Workspace {
+  id                 String              @id @default(cuid())
+  name               String
+  createdAt          DateTime            @default(now())
+  members            WorkspaceMember[]
+  socialAccounts     SocialAccount[]
+  connectionInvites  ConnectionInvite[]
+  teamInvites        TeamInvite[]
+  clients            Client[]
+  posts              Post[]
+  adCampaigns        AdCampaign[]
+  apiTokens          ApiToken[]
+  mediaAssets        MediaAsset[]
+  reviewLinks        ReviewLink[]
+  activityLogs       ActivityLog[]
+  aiMode             String              @default("credits") // credits | byo
+  // BYO-Keys werden NIE im Klartext gespeichert (AES-256-GCM, Schlüssel in ENV)
+  anthropicKeyEnc    String?
+  openaiKeyEnc       String?
+  plan               String              @default("starter") // starter | pro | agency
+  creditBalance      Int                 @default(0)
+  creditTransactions CreditTransaction[]
+  // Stripe (Phase 3) — null = Demo-Modus ohne Zahlungsanbindung
+  stripeCustomerId     String?           @unique
+  stripeSubscriptionId String?
+  subscriptionStatus   String? // trialing | active | past_due | canceled
+  currentPeriodEnd     DateTime?
+  // monatliches Credit-Kontingent: Zeitpunkt der letzten Gutschrift
+  lastGrantAt          DateTime?
+}
+
+model WorkspaceMember {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  role        String    @default("owner") // owner | admin | editor | viewer
+  createdAt   DateTime  @default(now())
+
+  @@unique([workspaceId, userId])
+}
+
+// Einladung eines Teammitglieds (Mensch) in einen Workspace. Nicht zu
+// verwechseln mit ConnectionInvite (Anbindung eines Kunden-Social-Accounts).
+model TeamInvite {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  email       String // eingeladene Adresse (Hinweis; Token = Zugang)
+  role        String    @default("editor") // admin | editor | viewer
+  token       String    @unique
+  status      String    @default("pending") // pending | accepted | revoked
+  invitedBy   String // Anzeigename des Einladenden
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  acceptedAt  DateTime?
+
+  @@index([workspaceId, status])
+}
+
+// ── Kunden (Mandanten der Agentur) ────────────────────────────────────
+// Eine Agentur = ein Workspace. Darin gruppiert "Client" die Social-Accounts
+// je Kunde, damit ein Social-Media-Manager 15+ Kunden übersichtlich verwaltet.
+model Client {
+  id          String          @id @default(cuid())
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  name        String
+  color       String          @default("#2563eb") // für die visuelle Gruppierung
+  // CRM-Stammdaten (schlankes Kunden-Profil)
+  company     String?
+  website     String?
+  notes       String? // Briefing, Absprachen, Do's & Don'ts
+  // Marke & Strategie (Fraukes „Allgemein"-Spalte)
+  goals       String? // Ziele
+  audience    String? // Zielgruppe
+  topics      String? // Kernthemen
+  brandColors String? // Farben
+  fonts       String? // Schriften
+  hashtags    String? // Standard-Hashtags
+  // Wiedervorlage: an diesem Datum erinnert das Tool, sich beim Kunden zu melden
+  followUpAt   DateTime?
+  followUpNote String?
+  createdAt   DateTime        @default(now())
+  accounts    SocialAccount[]
+  posts       Post[]
+  invites     ConnectionInvite[]
+  contacts    ClientContact[]
+  tasks       ClientTask[]
+  interactions ClientInteraction[]
+  adCampaigns AdCampaign[]
+
+  @@index([workspaceId])
+}
+
+// Kontakt-Historie: protokolliert Telefonate, E-Mails, Meetings und Notizen
+// je Kunde — das Gedächtnis der Agentur ("worüber haben wir zuletzt gesprochen?").
+model ClientInteraction {
+  id         String   @id @default(cuid())
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId   String
+  kind       String // call | email | meeting | note
+  text       String
+  happenedAt DateTime @default(now())
+  createdBy  String // Name der protokollierenden Person
+  createdAt  DateTime @default(now())
+
+  @@index([clientId, happenedAt])
+}
+
+// Ansprechpartner beim Kunden
+model ClientContact {
+  id        String   @id @default(cuid())
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId  String
+  name      String
+  role      String? // z. B. "Marketing-Leitung"
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+
+  @@index([clientId])
+}
+
+// Aufgaben / To-dos pro Kunde
+model ClientTask {
+  id        String    @id @default(cuid())
+  client    Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId  String
+  title     String
+  done      Boolean   @default(false)
+  dueDate   DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([clientId])
+}
+
+// ── Social Accounts & Kunden-Verbindungslinks ─────────────────────────
+
+model SocialAccount {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  // Zuordnung zu einem Kunden (nullable = noch keinem Kunden zugeordnet)
+  client      Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId    String?
+  platform    String // instagram | facebook | tiktok | linkedin | youtube | x | pinterest | wordpress
+  displayName String
+  // Bei wordpress: die Website-URL statt eines @handles
+  handle      String
+  // ID beim Provider (IG-Business-Account, FB-Page, YouTube-Channel, …) — für echtes Publishing
+  externalId  String?
+  // OAuth-Tokens (Phase 2) bzw. bei wordpress "username:app_password" — immer verschlüsselt, nie Klartext
+  accessTokenEnc  String?
+  refreshTokenEnc String?
+  status      String    @default("connected") // connected | token_expired | revoked
+  connectedAt DateTime  @default(now())
+  postLinks   PostAccount[]
+  adCampaigns AdCampaign[]
+
+  @@index([workspaceId])
+}
+
+model ConnectionInvite {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  // optionaler Kunde, dem der verbundene Account zugeordnet wird
+  client      Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId    String?
+  token       String    @unique
+  platform    String
+  clientName  String
+  status      String    @default("pending") // pending | accepted | expired | revoked
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  acceptedAt  DateTime?
+
+  @@index([workspaceId, status])
+}
+
+// ── Inhalte & Planung ─────────────────────────────────────────────────
+
+model Post {
+  id          String        @id @default(cuid())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  // Zuordnung zu einem Kunden (nullable für Bestandsdaten / kundenlose Posts)
+  client      Client?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId    String?
+  // Nur für format "article" (Blogartikel/Website) — Social-Formate haben keinen Titel
+  title       String?
+  body        String
+  format      String        @default("image") // text | image | video | carousel | story | article
+  scheduledAt DateTime
+  status      String        @default("scheduled") // draft | scheduled | publishing | published | failed
+  // Erinnerungs-Modus (Reels mit Trending-Sound): statt automatisch zu
+  // veröffentlichen, erinnert das Tool zur geplanten Zeit — der Sound wird
+  // manuell in der Instagram-App gewählt. reminderSentAt markiert, dass die
+  // Erinnerung schon ausgelöst wurde (verhindert Mehrfach-Trigger).
+  reminderMode   Boolean     @default(false)
+  reminderSentAt DateTime?
+  // Freigabe-Workflow (Phase 7): none = keine Freigabe nötig
+  approval     String        @default("none") // none | pending | approved | changes_requested
+  approvalNote String? // Kommentar des Freigebers bei "Änderungen erbeten"
+  submittedAt  DateTime?
+  decidedAt    DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  accounts    PostAccount[]
+  media       MediaAsset[]
+  comments    Comment[]
+  adCampaigns AdCampaign[]
+
+  @@index([workspaceId, scheduledAt])
+  @@index([status, scheduledAt]) // Scheduler-Query (Phase 2): fällige Posts
+  @@index([workspaceId, approval])
+  @@index([clientId])
+}
+
+// Kunden-Freigabelink: Kunde sieht die zur Freigabe eingereichten Posts und
+// gibt sie frei / bittet um Änderungen — ohne eigenes Konto (Token = Zugang).
+model ReviewLink {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  token       String    @unique
+  clientName  String
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+}
+
+// Aktivitätsprotokoll: wer hat wann was getan (Audit + Nachvollziehbarkeit)
+model ActivityLog {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  actor       String // "Andreas" oder "Kunde: Bäckerei Berger"
+  action      String // created | submitted | approved | changes_requested | published | connected
+  target      String? // Kurzbeschreibung, z. B. Post-Textauszug
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
+}
+
+// Verknüpfung Post ↔ SocialAccount inkl. Publishing-Ergebnis pro Ziel
+model PostAccount {
+  id              String        @id @default(cuid())
+  post            Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId          String
+  account         SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId       String
+  publishedPostId String? // ID beim Provider nach Erfolg
+  publishedAt     DateTime?
+  error           String? // letzte Fehlermeldung des Publishers
+  attemptCount    Int           @default(0)
+
+  @@unique([postId, accountId])
+}
+
+model MediaAsset {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  // echte Uploads: /uploads/<datei>; Demo-/KI-Platzhalter: placeholder:<hue>
+  url         String
+  kind        String    @default("image") // image | video
+  source      String    @default("upload") // upload | ai | placeholder
+  createdAt   DateTime  @default(now())
+  post        Post?     @relation(fields: [postId], references: [id], onDelete: SetNull)
+  postId      String?
+  sortOrder   Int       @default(0)
+
+  @@index([workspaceId])
+}
+
+// ── Kommentare (Inbox) ────────────────────────────────────────────────
+// Phase 1: lokale Verwaltung mit Demo-Daten. Phase 2 synchronisiert echte
+// Kommentare über die Plattform-APIs (Meta/TikTok/LinkedIn) — liken,
+// antworten und löschen laufen dann über dieselben Actions.
+
+model Comment {
+  id          String    @id @default(cuid())
+  workspaceId String
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId      String
+  author      String // Anzeigename des Kommentators
+  authorHandle String?
+  text        String
+  likedByUs   Boolean   @default(false)
+  isOwnReply  Boolean   @default(false) // von uns über das Tool geantwortet
+  parent      Comment?  @relation("Replies", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId    String?
+  replies     Comment[] @relation("Replies")
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@index([postId])
+}
+
+// ── MCP-Connector (API-Tokens für den Remote-MCP-Server) ──────────────
+// Nutzer:innen legen sich in Claude (Desktop/Code) einen Remote-MCP-Server
+// mit so einem Token an und können dann Kunden/Accounts auflisten sowie
+// Entwürfe/geplante Beiträge direkt aus dem Chat heraus anlegen.
+
+model ApiToken {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  name        String
+  tokenHash   String    @unique
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+
+  @@index([workspaceId])
+}
+
+// ── Ads (Phase 8) ────────────────────────────────────────────────────
+// Bewirbt einen bestehenden Post (Meta Marketing API: bestehenden Post
+// "boosten"). Ohne Meta-App-Review laufen die Kennzahlen deterministisch
+// simuliert (siehe src/lib/ads.ts) — echte Zahlen ersetzen dieselbe Anzeige,
+// sobald PUBLISH_MODE=live und ein Meta-Ad-Account verbunden ist.
+
+model AdCampaign {
+  id          String        @id @default(cuid())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  client      Client?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId    String?
+  post        Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId      String
+  account     SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId   String
+  objective   String // reach | engagement | traffic
+  budgetTotal Float // Gesamtbudget in EUR
+  startDate   DateTime
+  endDate     DateTime
+  status      String        @default("active") // active | paused | completed
+  createdBy   String // Name der anlegenden Person
+  createdAt   DateTime      @default(now())
+
+  @@index([workspaceId])
+  @@index([clientId])
+  @@index([postId])
+}
+
+// ── Credits ───────────────────────────────────────────────────────────
+
+model CreditTransaction {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  type        String // purchase | plan_grant | usage_text | usage_image | adjustment
+  amount      Int // positiv = Gutschrift, negativ = Verbrauch
+  description String
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
+}
