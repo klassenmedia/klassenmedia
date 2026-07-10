@@ -8,13 +8,12 @@
 //     Aufruf mangels Key auf einen Demo-Platzhalter zurück, kostet das nichts.
 //   • BYO-Keys werden nur im Provider-Modul entschlüsselt, nie hier geloggt.
 
-import { z } from "zod";
 import { db } from "./db";
 import { requireWorkspace } from "./auth";
 import { getWorkspaceBundle, WorkspaceBundle } from "./data";
 import { AI_CAPTION_IDEAS } from "./demo-data";
-import { PLATFORMS, type Platform } from "./types";
 import { can, type Role } from "./permissions";
+import { captionSchema, imageSchema, USAGE_COSTS } from "./schemas";
 import {
   AiError,
   generateCaption,
@@ -23,10 +22,6 @@ import {
   imageReady,
   textReady,
 } from "./ai/generate";
-
-const USAGE_COSTS = { caption: 1, image: 6 } as const;
-
-const PLATFORM_KEYS = Object.keys(PLATFORMS) as [Platform, ...Platform[]];
 
 export type CaptionResult = {
   ok: boolean;
@@ -84,11 +79,6 @@ async function chargeCredits(
   });
   return true;
 }
-
-const captionSchema = z.object({
-  topic: z.string().trim().min(1, "Bitte ein Thema oder ein paar Stichworte angeben").max(1000),
-  platform: z.enum(PLATFORM_KEYS).optional(),
-});
 
 function sample(list: string[], i = 0): string {
   // deterministisch genug, ohne Math.random im Serverkontext zu brauchen
@@ -185,8 +175,6 @@ export async function generateIdeasAction(input: unknown): Promise<IdeasResult> 
 }
 
 // ── Bild (via OpenAI) ─────────────────────────────────────────────────
-
-const imageSchema = z.string().trim().min(1, "Bitte beschreibe das gewünschte Bild").max(1000);
 
 export async function generateImageAction(input: unknown): Promise<ImageResult> {
   const { workspace, user, role } = await requireWorkspace();

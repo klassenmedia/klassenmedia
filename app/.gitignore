@@ -47,3 +47,5 @@ public/uploads/*
 prisma/dev.db*
 # Shadow-DB nur für `prisma migrate diff`
 shadow.db*
+# E2E-Testlauf (wegwerfbare DB/Uploads, siehe tests/e2e/run-all.mjs)
+/tests/e2e/.runtime/

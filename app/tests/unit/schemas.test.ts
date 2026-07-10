@@ -1,0 +1,172 @@
+import { describe, expect, it } from "vitest";
+import {
+  accountSchema,
+  canAfford,
+  captionSchema,
+  changeRoleSchema,
+  clientSchema,
+  CREDIT_PACKAGES,
+  FORMAT_MAX_MEDIA,
+  imageSchema,
+  inviteMemberSchema,
+  inviteSchema,
+  keysSchema,
+  postSchema,
+  USAGE_COSTS,
+} from "@/lib/schemas";
+
+describe("postSchema", () => {
+  const valid = {
+    body: "Neuer Beitrag",
+    date: "2026-07-10",
+    time: "09:30",
+    accountIds: ["acc_1"],
+    status: "draft",
+    format: "text",
+    media: [],
+  };
+
+  it("accepts a valid draft post", () => {
+    expect(postSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("rejects an empty body", () => {
+    const result = postSchema.safeParse({ ...valid, body: "  " });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a malformed date", () => {
+    expect(postSchema.safeParse({ ...valid, date: "10.07.2026" }).success).toBe(false);
+  });
+
+  it("rejects a malformed time", () => {
+    expect(postSchema.safeParse({ ...valid, time: "9:30" }).success).toBe(false);
+  });
+
+  it("requires at least one account", () => {
+    expect(postSchema.safeParse({ ...valid, accountIds: [] }).success).toBe(false);
+  });
+
+  it("rejects an unknown status or format", () => {
+    expect(postSchema.safeParse({ ...valid, status: "archived" }).success).toBe(false);
+    expect(postSchema.safeParse({ ...valid, format: "podcast" }).success).toBe(false);
+  });
+
+  it("caps media at 20 items", () => {
+    const media = Array.from({ length: 21 }, (_, i) => ({ id: null, url: `https://x.test/${i}` }));
+    expect(postSchema.safeParse({ ...valid, media }).success).toBe(false);
+    expect(postSchema.safeParse({ ...valid, media: media.slice(0, 20) }).success).toBe(true);
+  });
+});
+
+describe("clientSchema", () => {
+  it("accepts a name without a color", () => {
+    expect(clientSchema.safeParse({ name: "Bäckerei Berger" }).success).toBe(true);
+  });
+
+  it("rejects an invalid hex color", () => {
+    expect(clientSchema.safeParse({ name: "X", color: "blue" }).success).toBe(false);
+    expect(clientSchema.safeParse({ name: "X", color: "#zzzzzz" }).success).toBe(false);
+  });
+
+  it("accepts a valid hex color", () => {
+    expect(clientSchema.safeParse({ name: "X", color: "#2563eb" }).success).toBe(true);
+  });
+
+  it("rejects an empty name", () => {
+    expect(clientSchema.safeParse({ name: "" }).success).toBe(false);
+  });
+});
+
+describe("accountSchema / inviteSchema", () => {
+  it("rejects an unknown platform", () => {
+    expect(
+      accountSchema.safeParse({ platform: "myspace", displayName: "A", handle: "@a" }).success
+    ).toBe(false);
+  });
+
+  it("accepts a known platform", () => {
+    expect(
+      accountSchema.safeParse({ platform: "instagram", displayName: "A", handle: "@a" }).success
+    ).toBe(true);
+  });
+
+  it("requires a non-empty client name for invites", () => {
+    expect(inviteSchema.safeParse({ platform: "instagram", clientName: "" }).success).toBe(false);
+    expect(
+      inviteSchema.safeParse({ platform: "instagram", clientName: "Frauke" }).success
+    ).toBe(true);
+  });
+});
+
+describe("keysSchema", () => {
+  it("accepts an empty object (both keys optional)", () => {
+    expect(keysSchema.safeParse({}).success).toBe(true);
+  });
+
+  it("rejects an oversized key", () => {
+    expect(keysSchema.safeParse({ anthropicKey: "x".repeat(301) }).success).toBe(false);
+  });
+});
+
+describe("inviteMemberSchema / changeRoleSchema", () => {
+  it("rejects an invalid email", () => {
+    expect(inviteMemberSchema.safeParse({ email: "not-an-email", role: "editor" }).success).toBe(
+      false
+    );
+  });
+
+  it("lower-cases the email", () => {
+    const parsed = inviteMemberSchema.safeParse({ email: "Andreas@Klassenmedia.de", role: "editor" });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.email).toBe("andreas@klassenmedia.de");
+  });
+
+  it("rejects assigning the owner role", () => {
+    expect(inviteMemberSchema.safeParse({ email: "a@b.de", role: "owner" }).success).toBe(false);
+    expect(changeRoleSchema.safeParse({ memberId: "m1", role: "owner" }).success).toBe(false);
+  });
+
+  it("accepts admin/editor/viewer", () => {
+    for (const role of ["admin", "editor", "viewer"]) {
+      expect(changeRoleSchema.safeParse({ memberId: "m1", role }).success).toBe(true);
+    }
+  });
+});
+
+describe("captionSchema / imageSchema", () => {
+  it("rejects an empty topic/prompt", () => {
+    expect(captionSchema.safeParse({ topic: "" }).success).toBe(false);
+    expect(imageSchema.safeParse("").success).toBe(false);
+  });
+
+  it("accepts a topic without a platform", () => {
+    expect(captionSchema.safeParse({ topic: "Sommer-Angebot" }).success).toBe(true);
+  });
+});
+
+describe("credit & format price tables", () => {
+  it("matches the documented usage costs", () => {
+    expect(USAGE_COSTS).toEqual({ caption: 1, image: 6 });
+  });
+
+  it("carousel allows up to 20 media, single-media formats allow 1", () => {
+    expect(FORMAT_MAX_MEDIA.carousel).toBe(20);
+    expect(FORMAT_MAX_MEDIA.image).toBe(1);
+    expect(FORMAT_MAX_MEDIA.text).toBe(0);
+  });
+
+  it("credit packages scale credits with price", () => {
+    expect(CREDIT_PACKAGES.S.credits).toBeLessThan(CREDIT_PACKAGES.M.credits);
+    expect(CREDIT_PACKAGES.M.credits).toBeLessThan(CREDIT_PACKAGES.L.credits);
+  });
+});
+
+describe("canAfford", () => {
+  it("is true when balance covers cost, false otherwise", () => {
+    expect(canAfford(10, 6)).toBe(true);
+    expect(canAfford(6, 6)).toBe(true);
+    expect(canAfford(5, 6)).toBe(false);
+    expect(canAfford(0, 1)).toBe(false);
+  });
+});

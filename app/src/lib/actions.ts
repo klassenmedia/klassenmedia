@@ -14,13 +14,19 @@ import { requireWorkspace, setActiveWorkspace } from "./auth";
 import { encrypt } from "./crypto";
 import { getWorkspaceBundle, WorkspaceBundle } from "./data";
 import { logActivity } from "./activity";
+import { can, ROLE_LABELS, type Capability } from "./permissions";
 import {
-  ASSIGNABLE_ROLES,
-  can,
-  ROLE_LABELS,
-  type Capability,
-  type Role,
-} from "./permissions";
+  accountSchema,
+  changeRoleSchema,
+  clientSchema,
+  CREDIT_PACKAGES,
+  FORMAT_MAX_MEDIA,
+  inviteMemberSchema,
+  inviteSchema,
+  keysSchema,
+  postSchema,
+  USAGE_COSTS,
+} from "./schemas";
 
 export type ActionResult = {
   ok: boolean;
@@ -50,21 +56,6 @@ async function guard(
   return { denied: null, ctx };
 }
 
-const PLATFORM_VALUES = [
-  "instagram", "facebook", "tiktok", "linkedin", "youtube", "x", "pinterest",
-] as const;
-
-// Serverseitige Preislisten — bewusst nicht im Client
-const CREDIT_PACKAGES: Record<string, { credits: number; label: string }> = {
-  S: { credits: 500, label: "Credit-Paket S gekauft (Demo)" },
-  M: { credits: 2000, label: "Credit-Paket M gekauft (Demo)" },
-  L: { credits: 10000, label: "Credit-Paket L gekauft (Demo)" },
-};
-const USAGE_COSTS: Record<string, number> = { caption: 1, image: 6 };
-const FORMAT_MAX_MEDIA: Record<string, number> = {
-  text: 0, image: 1, video: 1, carousel: 20, story: 1,
-};
-
 async function ok(): Promise<ActionResult> {
   const { user, workspace, role } = await requireWorkspace();
   return {
@@ -82,21 +73,6 @@ function fail(error: string): ActionResult {
 }
 
 // ── Posts ─────────────────────────────────────────────────────────────
-
-const postSchema = z.object({
-  id: z.string().optional(),
-  body: z.string().trim().min(1, "Text fehlt").max(5000),
-  clientId: z.string().nullable().optional(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  time: z.string().regex(/^\d{2}:\d{2}$/),
-  accountIds: z.array(z.string()).min(1, "Mindestens ein Account"),
-  // "review" = zur Freigabe einreichen (wird intern als Entwurf + approval=pending abgelegt)
-  status: z.enum(["draft", "scheduled", "review"]),
-  format: z.enum(["text", "image", "video", "carousel", "story"]),
-  media: z
-    .array(z.object({ id: z.string().nullable(), url: z.string().max(500) }))
-    .max(20),
-});
 
 export async function savePostAction(input: unknown): Promise<ActionResult> {
   const g = await guard("content");
@@ -275,13 +251,6 @@ export async function movePostAction(id: string, column: unknown): Promise<Actio
 
 // ── Social Accounts & Verbindungslinks ───────────────────────────────
 
-const accountSchema = z.object({
-  platform: z.enum(PLATFORM_VALUES),
-  displayName: z.string().trim().min(1).max(100),
-  handle: z.string().trim().min(1).max(100),
-  clientId: z.string().nullable().optional(),
-});
-
 export async function addAccountAction(input: unknown): Promise<ActionResult> {
   const g = await guard("accounts");
   if (g.denied) return g.denied;
@@ -313,12 +282,6 @@ export async function removeAccountAction(id: string): Promise<ActionResult> {
   await db.socialAccount.deleteMany({ where: { id, workspaceId: workspace.id } });
   return ok();
 }
-
-const inviteSchema = z.object({
-  platform: z.enum(PLATFORM_VALUES),
-  clientName: z.string().trim().min(1).max(100),
-  clientId: z.string().nullable().optional(),
-});
 
 export async function createInviteAction(input: unknown): Promise<ActionResult> {
   const g = await guard("accounts");
@@ -376,12 +339,6 @@ export async function acceptInviteAction(id: string): Promise<ActionResult> {
 }
 
 // ── Kunden (Mandanten der Agentur) ────────────────────────────────────
-
-const HEX = /^#[0-9a-fA-F]{6}$/;
-const clientSchema = z.object({
-  name: z.string().trim().min(1, "Name fehlt").max(80),
-  color: z.string().regex(HEX, "Ungültige Farbe").optional(),
-});
 
 export async function createClientAction(input: unknown): Promise<ActionResult> {
   const g = await guard("accounts");
@@ -465,11 +422,6 @@ export async function setAiModeAction(mode: unknown): Promise<ActionResult> {
   });
   return ok();
 }
-
-const keysSchema = z.object({
-  anthropicKey: z.string().trim().max(300).optional(),
-  openaiKey: z.string().trim().max(300).optional(),
-});
 
 export async function saveByoKeysAction(input: unknown): Promise<ActionResult> {
   const g = await guard("ai_settings");
@@ -687,11 +639,6 @@ export async function revokeReviewLinkAction(id: string): Promise<ActionResult> 
 
 // ── Team & Rollen (Phase 7b) ──────────────────────────────────────────
 
-const inviteMemberSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Bitte eine gültige E-Mail eingeben"),
-  role: z.enum(ASSIGNABLE_ROLES as [Role, ...Role[]]),
-});
-
 /** Teammitglied per E-Mail einladen — erzeugt einen 7 Tage gültigen Link. */
 export async function inviteMemberAction(input: unknown): Promise<ActionResult> {
   const g = await guard("team");
@@ -732,11 +679,6 @@ export async function revokeTeamInviteAction(id: string): Promise<ActionResult> 
   });
   return ok();
 }
-
-const changeRoleSchema = z.object({
-  memberId: z.string(),
-  role: z.enum(ASSIGNABLE_ROLES as [Role, ...Role[]]),
-});
 
 /** Rolle eines Mitglieds ändern — der Inhaber ist unveränderlich. */
 export async function changeMemberRoleAction(input: unknown): Promise<ActionResult> {

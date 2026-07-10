@@ -18,6 +18,15 @@ npm run dev                 # oder: npm run dev -- -p 3001, falls Port 3000 bele
 **Demo-Login** (nach `db:seed`): `demo@klassenmedia.de` / `demo1234` —
 oder unter `/register` ein eigenes Konto anlegen.
 
+## Tests
+
+```bash
+npm run test     # Unit-Tests (Vitest) — Rollen/Rechte, Zod-Validierung, Plattformregeln, Preise
+npm run test:e2e # E2E-Suite (Playwright) — baut die App, startet sie gegen eine wegwerfbare
+                 # Test-DB und durchläuft echte Browser-Flows: Registrierung/Login,
+                 # Account→Post→Board, CRM, Kunden-Kontext-Trennung
+```
+
 ## Was ist echt, was noch Demo?
 
 | Bereich | Status |
@@ -43,6 +52,7 @@ oder unter `/register` ein eigenes Konto anlegen.
 | Publishing-Engine (Scheduler, Plattformregeln, Retries) | ✅ läuft lokal im Simulationsmodus — echte Plattform-APIs nach App-Review (`PUBLISH_MODE=live`) |
 | Kunden-Freigabeseite `/connect/<token>` | ✅ funktioniert lokal (OAuth-Weiterleitung folgt in Phase 2b) |
 | Stripe (Abo-Checkout, Credit-Kauf, Webhook, Kundenportal) | ✅ Code fertig — aktiviert sich mit `STRIPE_SECRET_KEY` in `.env`, sonst Demo-Modus |
+| Tests (Unit + E2E, echter Browser) | ✅ `npm run test` (Vitest) + `npm run test:e2e` (Playwright) — siehe Abschnitt „Tests“ |
 
 ## Sicherheit (Phase 1)
 

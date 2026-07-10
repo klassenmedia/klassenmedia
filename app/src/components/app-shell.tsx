@@ -266,6 +266,7 @@ function ClientBar() {
       <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Kunde</span>
       <div className="relative">
         <button
+          data-testid="client-bar-trigger"
           onClick={() => setOpen((o) => !o)}
           className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-1.5 text-sm font-semibold transition hover:border-accent/40"
         >
@@ -284,8 +285,12 @@ function ClientBar() {
         {open && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-            <div className="absolute left-0 top-full z-20 mt-1 max-h-80 w-64 overflow-auto rounded-xl border border-line bg-surface p-1 shadow-xl">
+            <div
+              data-testid="client-bar-menu"
+              className="absolute left-0 top-full z-20 mt-1 max-h-80 w-64 overflow-auto rounded-xl border border-line bg-surface p-1 shadow-xl"
+            >
               <button
+                data-testid="client-bar-option-all"
                 onClick={() => {
                   setSelectedClient(null);
                   setOpen(false);
@@ -299,6 +304,8 @@ function ClientBar() {
               {clients.map((c) => (
                 <button
                   key={c.id}
+                  data-testid={`client-bar-option-${c.id}`}
+                  data-client-name={c.name}
                   onClick={() => {
                     setSelectedClient(c.id);
                     setOpen(false);
