@@ -320,9 +320,8 @@ export default function LandingPage() {
             Planbar · Prototyp
           </div>
           <div className="flex gap-6">
-            <span className="cursor-pointer transition hover:text-foreground">Impressum</span>
-            <span className="cursor-pointer transition hover:text-foreground">Datenschutz</span>
-            <span className="cursor-pointer transition hover:text-foreground">AGB</span>
+            <Link href="/impressum" className="transition hover:text-foreground">Impressum</Link>
+            <Link href="/datenschutz" className="transition hover:text-foreground">Datenschutz</Link>
           </div>
         </div>
       </footer>

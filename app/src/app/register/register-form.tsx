@@ -81,6 +81,13 @@ export function RegisterForm({ invite }: { invite?: string }) {
           >
             {pending ? "Einen Moment …" : "Konto erstellen"}
           </button>
+          <p className="text-center text-xs text-muted">
+            Mit der Registrierung akzeptierst du unsere{" "}
+            <Link href="/datenschutz" className="underline hover:text-foreground">
+              Datenschutzerklärung
+            </Link>
+            .
+          </p>
         </div>
       </form>
 
