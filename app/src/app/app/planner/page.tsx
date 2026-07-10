@@ -32,6 +32,7 @@ interface ComposerState {
   status: PostStatus | "review";
   format: PostFormat;
   media: MediaItem[];
+  reminderMode: boolean;
 }
 
 export default function PlannerPage() {
@@ -139,6 +140,7 @@ export default function PlannerPage() {
       status: "scheduled",
       format: "image",
       media: [],
+      reminderMode: false,
     });
   }
 
@@ -170,6 +172,7 @@ export default function PlannerPage() {
         format,
         accountIds: c.accountIds.filter((id) => allowedIds.has(id)),
         media: c.media.slice(0, FORMATS[format].maxMedia),
+        reminderMode: format === "video" ? c.reminderMode : false,
       };
     });
   }
@@ -248,6 +251,7 @@ export default function PlannerPage() {
             : "scheduled",
       format: composer.format,
       media: composer.media,
+      reminderMode: composer.reminderMode,
     });
     setSaving(false);
     if (ok) setComposer(null);
@@ -527,6 +531,30 @@ export default function PlannerPage() {
                 </p>
               )}
             </div>
+
+            {composer.format === "video" &&
+              composer.accountIds.some(
+                (id) => accounts.find((a) => a.id === id)?.platform === "instagram"
+              ) && (
+                <label className="flex items-start gap-3 rounded-xl border border-line bg-surface-2 p-3.5">
+                  <input
+                    type="checkbox"
+                    checked={composer.reminderMode}
+                    onChange={(e) => setComposer({ ...composer, reminderMode: e.target.checked })}
+                    className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
+                  />
+                  <span>
+                    <span className="block text-sm font-medium">
+                      🔔 Erinnerungs-Modus (Trending-Sound manuell wählen)
+                    </span>
+                    <span className="mt-0.5 block text-xs text-muted">
+                      Statt automatisch zu veröffentlichen, erinnert dich Planbar zur geplanten
+                      Zeit — du wählst den Sound direkt in der Instagram-App und postest manuell.
+                      Grund: Trending-Sounds sind über keine API auswählbar.
+                    </span>
+                  </span>
+                </label>
+              )}
 
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <div>

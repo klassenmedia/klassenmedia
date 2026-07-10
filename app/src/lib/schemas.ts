@@ -28,6 +28,8 @@ export const postSchema = z
     media: z
       .array(z.object({ id: z.string().nullable(), url: z.string().max(500) }))
       .max(20),
+    // Erinnerungs-Modus (Reels mit Trending-Sound) — nur bei format "video" sinnvoll
+    reminderMode: z.boolean().optional(),
   })
   .refine((data) => data.format !== "article" || !!data.title?.trim(), {
     message: "Blogartikel braucht einen Titel",

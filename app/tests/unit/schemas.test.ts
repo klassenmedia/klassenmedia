@@ -68,6 +68,13 @@ describe("postSchema", () => {
     expect(postSchema.safeParse({ ...valid, format: "text", title: null }).success).toBe(true);
   });
 
+  it("accepts an optional reminderMode flag", () => {
+    expect(postSchema.safeParse({ ...valid, format: "video", reminderMode: true }).success).toBe(
+      true
+    );
+    expect(postSchema.safeParse(valid).success).toBe(true); // reminderMode omitted is fine
+  });
+
   it("caps media at 20 items", () => {
     const media = Array.from({ length: 21 }, (_, i) => ({ id: null, url: `https://x.test/${i}` }));
     expect(postSchema.safeParse({ ...valid, media }).success).toBe(false);

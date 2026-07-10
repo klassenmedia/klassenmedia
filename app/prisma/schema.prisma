@@ -213,6 +213,12 @@ model Post {
   format      String        @default("image") // text | image | video | carousel | story | article
   scheduledAt DateTime
   status      String        @default("scheduled") // draft | scheduled | publishing | published | failed
+  // Erinnerungs-Modus (Reels mit Trending-Sound): statt automatisch zu
+  // veröffentlichen, erinnert das Tool zur geplanten Zeit — der Sound wird
+  // manuell in der Instagram-App gewählt. reminderSentAt markiert, dass die
+  // Erinnerung schon ausgelöst wurde (verhindert Mehrfach-Trigger).
+  reminderMode   Boolean     @default(false)
+  reminderSentAt DateTime?
   // Freigabe-Workflow (Phase 7): none = keine Freigabe nötig
   approval     String        @default("none") // none | pending | approved | changes_requested
   approvalNote String? // Kommentar des Freigebers bei "Änderungen erbeten"

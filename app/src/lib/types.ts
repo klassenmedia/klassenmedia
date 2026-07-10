@@ -141,6 +141,10 @@ export interface Post {
   publishErrors: string[];
   approval: ApprovalStatus;
   approvalNote: string | null;
+  /** Erinnerungs-Modus (Reels): statt automatisch zu posten, erinnert das Tool zur geplanten Zeit */
+  reminderMode: boolean;
+  /** true = die Erinnerung ist fällig, wartet auf manuelle Bestätigung ("Ich habe gepostet") */
+  reminderDue: boolean;
 }
 
 export type ApprovalStatus = "none" | "pending" | "approved" | "changes_requested";

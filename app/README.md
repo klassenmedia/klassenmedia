@@ -51,6 +51,7 @@ npm run test:e2e # E2E-Suite (Playwright) — baut die App, startet sie gegen ei
 | KI-Bilder (1024×1024) | ✅ echt über OpenAI (`gpt-image-1`), landen in der Medienbibliothek — Demo-Platzhalter ohne Key |
 | BYO-API-Keys | ✅ verschlüsselt gespeichert (AES-256-GCM), werden für echte KI-Aufrufe genutzt |
 | Publishing-Engine (Scheduler, Plattformregeln, Retries) | ✅ läuft lokal im Simulationsmodus — echte Plattform-APIs nach App-Review (`PUBLISH_MODE=live`) |
+| Erinnerungs-Modus (Reels mit Trending-Sound) | ✅ echt — statt Auto-Post erinnert das Tool bandübergreifend (Banner + Board), Sound wird manuell in der Instagram-App gewählt |
 | Blog/Website-Kanal (WordPress) | ✅ **echt, kein App-Review nötig** — Website per Anwendungskennwort verbinden, Blogartikel planen, mit `PUBLISH_MODE=live` sofort live |
 | Ads-Modul (bestehenden Post auf Instagram/Facebook bewerben) | ✅ Modell, UI, Rollen-Check (nur Inhaber:in/Admin) — Kennzahlen deterministisch simuliert, bis eine echte Meta-Marketing-API-Anbindung besteht |
 | Kunden-Freigabeseite `/connect/<token>` | ✅ funktioniert lokal (OAuth-Weiterleitung folgt in Phase 2b) |

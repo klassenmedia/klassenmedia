@@ -120,6 +120,8 @@ export async function savePostAction(input: unknown): Promise<ActionResult> {
         approval,
         approvalNote: isReview ? null : existing.approvalNote,
         submittedAt: isReview ? new Date() : existing.submittedAt,
+        reminderMode: data.format === "video" ? !!data.reminderMode : false,
+        reminderSentAt: null,
         accounts: {
           deleteMany: {},
           create: data.accountIds.map((accountId) => ({ accountId })),
@@ -138,6 +140,7 @@ export async function savePostAction(input: unknown): Promise<ActionResult> {
         status: dbStatus,
         approval,
         submittedAt: isReview ? new Date() : null,
+        reminderMode: data.format === "video" ? !!data.reminderMode : false,
         accounts: { create: data.accountIds.map((accountId) => ({ accountId })) },
       },
     });
@@ -195,6 +198,30 @@ export async function deletePostAction(id: string): Promise<ActionResult> {
   if (g.denied) return g.denied;
   const { workspace } = g.ctx;
   await db.post.deleteMany({ where: { id, workspaceId: workspace.id } });
+  return ok();
+}
+
+/**
+ * Erinnerungs-Modus: Nutzer:in hat manuell gepostet (Sound in der App
+ * gewählt) — bestätigt eine fällige Erinnerung als erledigt.
+ */
+export async function markReminderPostedAction(id: string): Promise<ActionResult> {
+  const g = await guard("content");
+  if (g.denied) return g.denied;
+  const { workspace, user } = g.ctx;
+  const post = await db.post.findFirst({
+    where: { id, workspaceId: workspace.id, reminderMode: true, reminderSentAt: { not: null } },
+  });
+  if (!post) return fail("Erinnerung nicht gefunden");
+
+  await db.$transaction([
+    db.post.update({ where: { id }, data: { status: "published" } }),
+    db.postAccount.updateMany({
+      where: { postId: id, publishedAt: null },
+      data: { publishedAt: new Date() },
+    }),
+  ]);
+  await logActivity(workspace.id, user.name, "published", post.body);
   return ok();
 }
 

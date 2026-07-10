@@ -44,6 +44,7 @@ import {
   assignAccountAction,
   deleteCommentAction,
   deletePostAction,
+  markReminderPostedAction,
   movePostAction,
   removeAccountAction,
   replyCommentAction,
@@ -88,6 +89,8 @@ export interface SavePostInput {
   status: "draft" | "scheduled" | "review";
   format: PostFormat;
   media: MediaItem[];
+  /** Erinnerungs-Modus (Reels) — nur bei format "video" wirksam */
+  reminderMode?: boolean;
 }
 
 interface Store {
@@ -122,6 +125,8 @@ interface Store {
   clearError: () => void;
   savePost: (p: SavePostInput) => Promise<boolean>;
   deletePost: (id: string) => Promise<void>;
+  /** Erinnerungs-Modus: fällige Erinnerung als "gepostet" bestätigen */
+  markReminderPosted: (id: string) => Promise<void>;
   /** Kanban: Beitrag in eine andere Pipeline-Spalte ziehen */
   movePost: (id: string, column: "draft" | "review" | "scheduled") => Promise<boolean>;
   addAccount: (a: {
@@ -243,6 +248,7 @@ export function StoreProvider({
       clearError: () => setError(null),
       savePost: (p) => apply(savePostAction(p)),
       deletePost: async (id) => void (await apply(deletePostAction(id))),
+      markReminderPosted: async (id) => void (await apply(markReminderPostedAction(id))),
       movePost: (id, column) => apply(movePostAction(id, column)),
       addAccount: async (a) => void (await apply(addAccountAction(a))),
       connectWordPress: (a) => apply(addWordPressAccountAction(a)),

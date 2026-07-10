@@ -163,6 +163,7 @@ export default function BoardPage() {
                           const acc = accounts.find((a) => a.id === id);
                           return acc ? <PlatformChip key={id} platform={acc.platform} size={18} /> : null;
                         })}
+                        {p.reminderDue && <span title="Erinnerung fällig">🔔</span>}
                         <span className="ml-auto text-muted">
                           <FormatIcon format={p.format} size={12} />
                         </span>

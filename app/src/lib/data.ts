@@ -226,6 +226,8 @@ export async function getWorkspaceBundle(
         .map((pa) => `${pa.account.handle}: ${pa.error}`),
       approval: p.approval as ApprovalStatus,
       approvalNote: p.approvalNote,
+      reminderMode: p.reminderMode,
+      reminderDue: p.reminderMode && p.reminderSentAt !== null && p.status === "scheduled",
     })),
     adCampaigns: adCampaignRows.map((c) => ({
       id: c.id,

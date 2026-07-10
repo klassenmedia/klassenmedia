@@ -119,6 +119,43 @@ const NAV = [
   },
 ];
 
+/**
+ * Erinnerungs-Modus (Reels): statt Push-Benachrichtigungen (keine native App)
+ * eine persistente Banner-Erinnerung auf jeder Seite, sobald ein Post fällig
+ * ist, dessen Sound manuell in der Instagram-App gewählt werden muss.
+ */
+function RemindersBanner() {
+  const { posts, accounts, markReminderPosted } = useStore();
+  const due = posts.filter((p) => p.reminderDue);
+  if (due.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-2 border-b border-warning/40 bg-warning/10 px-8 py-3">
+      {due.slice(0, 3).map((p) => {
+        const acc = accounts.find((id) => p.accountIds.includes(id.id));
+        return (
+          <div key={p.id} className="flex flex-wrap items-center gap-3 text-sm">
+            <span className="shrink-0">🔔</span>
+            <span className="min-w-0 flex-1 truncate">
+              Jetzt posten: <strong className="font-medium">{p.title || p.body}</strong>
+              {acc ? ` auf ${acc.handle}` : ""} — Trending-Sound in der App wählen.
+            </span>
+            <button
+              onClick={() => markReminderPosted(p.id)}
+              className="shrink-0 rounded-lg border border-warning/40 px-2.5 py-1 text-xs font-medium text-warning transition hover:bg-warning/15"
+            >
+              ✓ Ich habe gepostet
+            </button>
+          </div>
+        );
+      })}
+      {due.length > 3 && (
+        <div className="text-xs text-muted">+{due.length - 3} weitere Erinnerungen</div>
+      )}
+    </div>
+  );
+}
+
 function ErrorToast() {
   const { error, clearError } = useStore();
   if (!error) return null;
@@ -361,6 +398,7 @@ export function AppShell({
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <ClientBar />
+          <RemindersBanner />
           <main className="min-w-0 flex-1 px-8 py-8">{children}</main>
         </div>
       </div>

@@ -12,7 +12,13 @@ const PLAN_CREDITS: Record<string, number> = { starter: 100, pro: 500, agency: 2
 
 export async function processDuePosts(): Promise<void> {
   const due = await db.post.findMany({
-    where: { status: "scheduled", scheduledAt: { lte: new Date() } },
+    where: {
+      status: "scheduled",
+      scheduledAt: { lte: new Date() },
+      // Erinnerungs-Posts nur EINMAL einsammeln (reminderSentAt noch leer) —
+      // danach warten sie auf die manuelle Bestätigung, nicht auf den Scheduler.
+      OR: [{ reminderMode: false }, { reminderSentAt: null }],
+    },
     include: {
       accounts: { include: { account: true } },
       media: true,
@@ -21,6 +27,16 @@ export async function processDuePosts(): Promise<void> {
   });
 
   for (const post of due) {
+    if (post.reminderMode) {
+      const claimed = await db.post.updateMany({
+        where: { id: post.id, status: "scheduled", reminderSentAt: null },
+        data: { reminderSentAt: new Date() },
+      });
+      if (claimed.count === 0) continue;
+      await logActivity(post.workspaceId, "System", "reminder_due", post.title || post.body);
+      continue;
+    }
+
     // Doppelverarbeitung verhindern (z. B. bei überlappenden Läufen):
     // nur weitermachen, wenn wir den Status exklusiv umsetzen konnten
     const claimed = await db.post.updateMany({
