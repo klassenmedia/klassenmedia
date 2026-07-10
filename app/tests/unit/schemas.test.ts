@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   accountSchema,
   adCampaignSchema,
+  apiTokenNameSchema,
   canAfford,
   captionSchema,
   changeRoleSchema,
@@ -12,6 +13,7 @@ import {
   inviteMemberSchema,
   inviteSchema,
   keysSchema,
+  mcpCreatePostSchema,
   postSchema,
   USAGE_COSTS,
   wordpressAccountSchema,
@@ -172,6 +174,47 @@ describe("adCampaignSchema", () => {
 
   it("rejects an unknown objective", () => {
     expect(adCampaignSchema.safeParse({ ...valid, objective: "sales" }).success).toBe(false);
+  });
+});
+
+describe("apiTokenNameSchema", () => {
+  it("accepts a normal name", () => {
+    expect(apiTokenNameSchema.safeParse("Claude Desktop").success).toBe(true);
+  });
+
+  it("rejects an empty name", () => {
+    expect(apiTokenNameSchema.safeParse("  ").success).toBe(false);
+  });
+});
+
+describe("mcpCreatePostSchema", () => {
+  const valid = {
+    body: "Beitrag über MCP angelegt",
+    date: "2026-08-01",
+    time: "10:00",
+    accountIds: ["acc_1"],
+    format: "text",
+    status: "draft",
+  };
+
+  it("accepts a valid draft/scheduled post", () => {
+    expect(mcpCreatePostSchema.safeParse(valid).success).toBe(true);
+    expect(mcpCreatePostSchema.safeParse({ ...valid, status: "scheduled" }).success).toBe(true);
+  });
+
+  it("rejects a review status (not offered over MCP)", () => {
+    expect(mcpCreatePostSchema.safeParse({ ...valid, status: "review" }).success).toBe(false);
+  });
+
+  it("requires a title for article format, like the composer schema", () => {
+    expect(mcpCreatePostSchema.safeParse({ ...valid, format: "article" }).success).toBe(false);
+    expect(
+      mcpCreatePostSchema.safeParse({ ...valid, format: "article", title: "Titel" }).success
+    ).toBe(true);
+  });
+
+  it("requires at least one account", () => {
+    expect(mcpCreatePostSchema.safeParse({ ...valid, accountIds: [] }).success).toBe(false);
   });
 });
 

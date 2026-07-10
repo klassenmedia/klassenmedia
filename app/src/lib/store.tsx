@@ -10,6 +10,7 @@ import {
   AdCampaignItem,
   AdObjective,
   AiMode,
+  ApiTokenItem,
   ClientItem,
   CommentItem,
   ConnectionInvite,
@@ -76,6 +77,7 @@ import {
   pauseAdCampaignAction,
   resumeAdCampaignAction,
 } from "./ads-actions";
+import { createApiTokenAction, revokeApiTokenAction } from "./mcp-actions";
 
 export interface SavePostInput {
   id?: string;
@@ -101,6 +103,8 @@ interface Store {
   workspaces: WorkspaceSummary[];
   members: TeamMember[];
   teamInvites: TeamInviteItem[];
+  /** MCP-Connector: API-Tokens für Claude */
+  apiTokens: ApiTokenItem[];
   /** Rollen-Check für die UI (Buttons aus-/einblenden) */
   can: (cap: Capability) => boolean;
   clients: ClientItem[];
@@ -195,6 +199,9 @@ interface Store {
   revokeReviewLink: (id: string) => Promise<void>;
   inviteMember: (email: string, role: Role) => Promise<boolean>;
   revokeTeamInvite: (id: string) => Promise<void>;
+  /** MCP-Connector: Token erstellen — gibt den Rohwert zurück (wird nur einmal angezeigt) */
+  createApiToken: (name: string) => Promise<string | null>;
+  revokeApiToken: (id: string) => Promise<void>;
   changeMemberRole: (memberId: string, role: Role) => Promise<void>;
   removeMember: (memberId: string) => Promise<void>;
   switchWorkspace: (workspaceId: string) => Promise<void>;
@@ -349,6 +356,22 @@ export function StoreProvider({
       revokeReviewLink: async (id) => void (await apply(revokeReviewLinkAction(id))),
       inviteMember: (email, role) => apply(inviteMemberAction({ email, role })),
       revokeTeamInvite: async (id) => void (await apply(revokeTeamInviteAction(id))),
+      createApiToken: async (name) => {
+        try {
+          const res = await createApiTokenAction(name);
+          if (res.bundle) setBundle(res.bundle);
+          if (!res.ok) {
+            setError(res.error ?? "Unbekannter Fehler");
+            return null;
+          }
+          return res.rawToken ?? null;
+        } catch (e) {
+          console.error(e);
+          setError("Etwas ist schiefgelaufen — bitte noch einmal versuchen.");
+          return null;
+        }
+      },
+      revokeApiToken: async (id) => void (await apply(revokeApiTokenAction(id))),
       changeMemberRole: async (memberId, role) =>
         void (await apply(changeMemberRoleAction({ memberId, role }))),
       removeMember: async (memberId) => void (await apply(removeMemberAction(memberId))),

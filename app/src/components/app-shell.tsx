@@ -108,6 +108,18 @@ const NAV = [
     ),
   },
   {
+    href: "/app/integrations",
+    label: "Integrationen",
+    icon: (
+      <>
+        <circle cx="4" cy="8" r="2" stroke="currentColor" strokeWidth="1.3" fill="none" />
+        <circle cx="12" cy="4" r="2" stroke="currentColor" strokeWidth="1.3" fill="none" />
+        <circle cx="12" cy="12" r="2" stroke="currentColor" strokeWidth="1.3" fill="none" />
+        <path d="M5.7 7.1l4.6-2.4M5.7 8.9l4.6 2.4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      </>
+    ),
+  },
+  {
     href: "/app/billing",
     label: "Abo & Zahlung",
     icon: (

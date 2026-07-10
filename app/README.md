@@ -56,6 +56,7 @@ npm run test:e2e # E2E-Suite (Playwright) — baut die App, startet sie gegen ei
 | Ads-Modul (bestehenden Post auf Instagram/Facebook bewerben) | ✅ Modell, UI, Rollen-Check (nur Inhaber:in/Admin) — Kennzahlen deterministisch simuliert, bis eine echte Meta-Marketing-API-Anbindung besteht |
 | Kunden-Freigabeseite `/connect/<token>` | ✅ funktioniert lokal (OAuth-Weiterleitung folgt in Phase 2b) |
 | Stripe (Abo-Checkout, Credit-Kauf, Webhook, Kundenportal) | ✅ Code fertig — aktiviert sich mit `STRIPE_SECRET_KEY` in `.env`, sonst Demo-Modus |
+| MCP-Connector für Claude (Integrationen-Seite) | ✅ echt — API-Token erstellen, Remote-MCP-Server unter `/api/mcp` (Kunden/Accounts/Posts ansehen, Entwürfe & geplante Beiträge anlegen) |
 | Tests (Unit + E2E, echter Browser) | ✅ `npm run test` (Vitest) + `npm run test:e2e` (Playwright) — siehe Abschnitt „Tests“ |
 
 ## Sicherheit (Phase 1)
