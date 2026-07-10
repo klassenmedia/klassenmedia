@@ -50,12 +50,20 @@ export async function processDuePosts(): Promise<void> {
       if (target.publishedAt) continue; // bereits erfolgreich (Retry-Lauf)
 
       try {
+        const media = [...post.media].sort((a, b) => a.sortOrder - b.sortOrder);
         const result = await getAdapter(target.account.platform).publish(
-          { body: post.body, format: post.format, mediaCount: post.media.length, title: post.title },
+          {
+            body: post.body,
+            format: post.format,
+            mediaCount: post.media.length,
+            title: post.title,
+            mediaUrls: media.map((m) => m.url),
+          },
           {
             platform: target.account.platform,
             handle: target.account.handle,
             accessTokenEnc: target.account.accessTokenEnc,
+            externalId: target.account.externalId,
           }
         );
         await db.postAccount.update({

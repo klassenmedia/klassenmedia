@@ -40,7 +40,9 @@ npm run test:e2e # E2E-Suite (Playwright) — baut die App, startet sie gegen ei
 | Externer Medien-Link (großes Video per Dropbox/Drive-URL) | ✅ am Beitrag, im Composer & in der Freigabe direkt anklickbar |
 | Karussell bis 20 Folien | ✅ (organisch; Ads-Hinweis: nur 10) |
 | Bild-Upload im Composer | ✅ echt (lokales Dateisystem, `public/uploads/`) |
-| Accounts & Verbindungslinks | ✅ persistiert — echte OAuth-Anbindung folgt in Phase 2 |
+| Accounts & Verbindungslinks | ✅ persistiert — inkl. Demo-Bestätigung des Kunden-Links |
+| Echter Plattform-Login (OAuth: Instagram, Facebook, TikTok, LinkedIn, YouTube, Pinterest) | ✅ **Code komplett fertig** (Start/Callback-Routen, CSRF-Schutz, Token-Verschlüsselung, Konto-Auflösung) — aktiviert sich pro Plattform automatisch, sobald die App-Credentials in `.env` stehen (siehe `.env.example`) |
+| Echtes Publishing Instagram/Facebook (Graph API: Bild, Karussell, Reel, Story) | ✅ Adapter fertig — läuft mit `PUBLISH_MODE=live` + OAuth-verbundenem Account + `PUBLIC_APP_URL` |
 | Inbox (Kommentare liken/antworten/löschen) | ✅ persistiert — Sync mit Plattformen folgt in Phase 2 |
 | Analytics-Dashboard (KPIs, Trend, Kanäle, beste Zeiten, Top-Posts) | ✅ mit deterministischen Demo-Daten — echte Insights-Zahlen mit der Plattform-Anbindung |
 | Lernende Analytics (Klartext-Learnings via Claude) | ✅ echt über Claude — analysiert die Kennzahlen und leitet Handlungsempfehlungen ab (Demo-Platzhalter ohne Key) |

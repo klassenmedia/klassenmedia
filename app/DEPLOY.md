@@ -36,7 +36,9 @@ Der Code ist dafür fertig vorbereitet:
    | *(optional)* `ANTHROPIC_API_KEY` | für echte KI-Texte |
    | *(optional)* `OPENAI_API_KEY` | für echte KI-Bilder |
    | *(optional)* `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | für echte Zahlungen |
-   | *(später)* `PUBLISH_MODE` | `live` erst nach den App-Reviews |
+   | *(optional)* `PUBLIC_APP_URL` | öffentliche URL der App (z. B. `https://…up.railway.app`) — nötig fürs Live-Posten von Bildern/Videos |
+   | *(optional)* `META_APP_ID` / `META_APP_SECRET` u. a. | Plattform-Logins (OAuth) — je Plattform siehe `.env.example`; Redirect-URI: `https://<domain>/api/oauth/<plattform>/callback` |
+   | *(später)* `PUBLISH_MODE` | `live` — WordPress sofort, Social nach App-Review |
 
    `PORT` setzt Railway automatisch — nicht selbst setzen.
 6. **Deploy.** Der erste Start legt über `migrate deploy` das Datenbankschema auf

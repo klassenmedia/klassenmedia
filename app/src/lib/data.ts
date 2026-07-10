@@ -2,6 +2,7 @@ import "server-only";
 
 import { db } from "./db";
 import { imageReady, textReady } from "./ai/generate";
+import { oauthReadyMap } from "./oauth/providers";
 import { simulateAdMetrics } from "./ads-simulation";
 import type { Role } from "./permissions";
 import {
@@ -40,6 +41,8 @@ export interface WorkspaceBundle {
   teamInvites: TeamInviteItem[];
   /** MCP-Connector: API-Tokens für Claude (Remote-MCP-Server) */
   apiTokens: ApiTokenItem[];
+  /** Je Plattform: ist der echte OAuth-Login konfiguriert (App-Credentials in .env)? */
+  oauthReady: Record<Platform, boolean>;
   plan: PlanTier;
   aiMode: AiMode;
   hasByoKeys: boolean;
@@ -201,6 +204,7 @@ export async function getWorkspaceBundle(
       lastUsedAt: t.lastUsedAt ? fmtDate(t.lastUsedAt) : null,
       revoked: t.revokedAt !== null,
     })) satisfies ApiTokenItem[],
+    oauthReady: oauthReadyMap(),
     plan: workspace.plan as PlanTier,
     aiMode: workspace.aiMode as AiMode,
     hasByoKeys: Boolean(workspace.anthropicKeyEnc || workspace.openaiKeyEnc),

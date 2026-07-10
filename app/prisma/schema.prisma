@@ -189,6 +189,8 @@ model SocialAccount {
   displayName String
   // Bei wordpress: die Website-URL statt eines @handles
   handle      String
+  // ID beim Provider (IG-Business-Account, FB-Page, YouTube-Channel, …) — für echtes Publishing
+  externalId  String?
   // OAuth-Tokens (Phase 2) bzw. bei wordpress "username:app_password" — immer verschlüsselt, nie Klartext
   accessTokenEnc  String?
   refreshTokenEnc String?

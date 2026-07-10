@@ -106,6 +106,8 @@ interface Store {
   teamInvites: TeamInviteItem[];
   /** MCP-Connector: API-Tokens für Claude */
   apiTokens: ApiTokenItem[];
+  /** Je Plattform: echter OAuth-Login verfügbar (App-Credentials hinterlegt)? */
+  oauthReady: WorkspaceBundle["oauthReady"];
   /** Rollen-Check für die UI (Buttons aus-/einblenden) */
   can: (cap: Capability) => boolean;
   clients: ClientItem[];

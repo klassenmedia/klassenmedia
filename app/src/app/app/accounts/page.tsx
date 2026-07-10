@@ -1,11 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { Button, inputCls, Modal, PlatformChip } from "@/components/ui";
 import { Platform, PLATFORMS } from "@/lib/types";
 
 type ConnectMode = "choose" | "self" | "invite" | "invite-done" | "wordpress";
+
+// Rückmeldung nach dem OAuth-Redirect (?connected=… / ?oauth_error=…)
+const OAUTH_ERRORS: Record<string, string> = {
+  not_configured:
+    "Für diese Plattform sind noch keine App-Zugangsdaten hinterlegt — siehe .env (z. B. META_APP_ID).",
+  unknown_platform: "Unbekannte Plattform im Verbindungslink.",
+  denied: "Verbindung abgebrochen — auf dem Freigabe-Bildschirm wurde nicht zugestimmt.",
+  invalid_state: "Die Verbindungsanfrage war abgelaufen oder ungültig — bitte noch einmal starten.",
+  exchange_failed: "Die Plattform hat den Login nicht bestätigt — bitte noch einmal versuchen.",
+  ig_no_business_account:
+    "Keine Facebook-Seite mit verknüpftem Instagram-Business-Konto gefunden. Das Instagram-Profil muss ein Business-/Creator-Konto sein und mit einer Facebook-Seite verknüpft.",
+  fb_no_pages: "Keine Facebook-Seite gefunden, auf die dieser Login Zugriff hat.",
+  yt_no_channel: "Kein YouTube-Kanal auf diesem Google-Konto gefunden.",
+  unexpected: "Unerwarteter Fehler bei der Verbindung — bitte noch einmal versuchen.",
+};
+
+function OAuthNotice() {
+  const search = useSearchParams();
+  const router = useRouter();
+  const connected = search.get("connected");
+  const errorCode = search.get("oauth_error");
+  if (!connected && !errorCode) return null;
+
+  const dismiss = () => router.replace("/app/accounts");
+  if (connected) {
+    const label = PLATFORMS[connected as Platform]?.label ?? connected;
+    return (
+      <div className="mb-6 flex items-start justify-between gap-3 rounded-2xl border border-success/40 bg-success/10 p-4 text-sm">
+        <p>
+          <strong>{label} verbunden ✓</strong> — der Account ist jetzt echt angebunden und kann
+          automatisch veröffentlichen.
+        </p>
+        <button onClick={dismiss} aria-label="Hinweis schließen" className="text-muted hover:text-foreground">×</button>
+      </div>
+    );
+  }
+  return (
+    <div className="mb-6 flex items-start justify-between gap-3 rounded-2xl border border-danger/40 bg-danger/10 p-4 text-sm">
+      <p>
+        <strong>Verbindung fehlgeschlagen:</strong>{" "}
+        {OAUTH_ERRORS[errorCode!] ?? OAUTH_ERRORS.unexpected}
+      </p>
+      <button onClick={dismiss} aria-label="Hinweis schließen" className="text-muted hover:text-foreground">×</button>
+    </div>
+  );
+}
 
 export default function AccountsPage() {
   const {
@@ -14,6 +61,7 @@ export default function AccountsPage() {
     invites: allInvites,
     clients,
     selectedClientId,
+    oauthReady,
     addAccount,
     connectWordPress,
     removeAccount,
@@ -145,6 +193,9 @@ export default function AccountsPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
+      <Suspense fallback={null}>
+        <OAuthNotice />
+      </Suspense>
       <div className="mb-8 flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Accounts</h1>
@@ -261,10 +312,12 @@ export default function AccountsPage() {
       )}
 
       <div className="mt-8 rounded-2xl border border-line bg-surface p-5 text-sm text-muted">
-        <strong className="text-foreground">Hinweis (Prototyp):</strong> Im fertigen Produkt läuft
-        „Selbst einloggen“ über die offiziellen OAuth-Flows der Plattformen; der Verbindungslink
-        führt den Kunden auf eine Freigabe-Seite mit demselben OAuth-Login — Passwörter werden nie
-        geteilt. Details in KONZEPT.md, Abschnitt 3.1 und 6.2.
+        <strong className="text-foreground">So funktioniert das Verbinden:</strong> Plattformen mit
+        hinterlegten App-Zugangsdaten öffnen den offiziellen OAuth-Login — Passwörter werden nie
+        geteilt. Für die übrigen Plattformen läuft die Verbindung im Demo-Modus, bis die jeweilige
+        Developer-App freigegeben ist (Redirect-URI:{" "}
+        <code className="font-mono text-xs">/api/oauth/&lt;plattform&gt;/callback</code>, Details
+        in API_MOEGLICHKEITEN.md). WordPress braucht kein Review und ist sofort echt.
       </div>
 
       {mode === "choose" && (
@@ -311,38 +364,61 @@ export default function AccountsPage() {
         <Modal title="Selbst einloggen" onClose={() => setMode(null)}>
           <div className="flex flex-col gap-4">
             {platformPicker}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Anzeigename</label>
-              <input
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="z. B. Klassen Media"
-                className={inputCls}
-                autoFocus
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Handle / Profilname</label>
-              <input
-                value={handle}
-                onChange={(e) => setHandle(e.target.value)}
-                placeholder="z. B. @klassenmedia"
-                className={inputCls}
-              />
-            </div>
-            {clientPicker}
-            <p className="text-xs text-muted">
-              Demo-Modus: Hier öffnet sich später der echte OAuth-Login der Plattform, danach
-              wählst du aus deinen verwalteten Seiten/Profilen aus.
-            </p>
-            <div className="flex justify-end gap-3 border-t border-line pt-4">
-              <Button variant="ghost" onClick={() => setMode("choose")}>
-                Zurück
-              </Button>
-              <Button onClick={submitSelf} disabled={!displayName.trim() || !handle.trim()}>
-                Verbinden
-              </Button>
-            </div>
+            {oauthReady[platform] ? (
+              <>
+                {clientPicker}
+                <p className="text-xs text-muted">
+                  Es öffnet sich der offizielle Login von {PLATFORMS[platform].label}. Dort meldest
+                  du dich an und bestätigst den Zugriff — dein Passwort landet nie bei Planbar.
+                </p>
+                <div className="flex justify-end gap-3 border-t border-line pt-4">
+                  <Button variant="ghost" onClick={() => setMode("choose")}>
+                    Zurück
+                  </Button>
+                  <a
+                    href={`/api/oauth/${platform}/start${dialogClientId ? `?clientId=${encodeURIComponent(dialogClientId)}` : ""}`}
+                    className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-contrast transition hover:brightness-110"
+                  >
+                    Mit {PLATFORMS[platform].label} verbinden →
+                  </a>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">Anzeigename</label>
+                  <input
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="z. B. Klassen Media"
+                    className={inputCls}
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">Handle / Profilname</label>
+                  <input
+                    value={handle}
+                    onChange={(e) => setHandle(e.target.value)}
+                    placeholder="z. B. @klassenmedia"
+                    className={inputCls}
+                  />
+                </div>
+                {clientPicker}
+                <p className="text-xs text-muted">
+                  Demo-Modus: Sobald die App-Zugangsdaten dieser Plattform in der .env hinterlegt
+                  sind, öffnet sich hier automatisch der echte OAuth-Login.
+                </p>
+                <div className="flex justify-end gap-3 border-t border-line pt-4">
+                  <Button variant="ghost" onClick={() => setMode("choose")}>
+                    Zurück
+                  </Button>
+                  <Button onClick={submitSelf} disabled={!displayName.trim() || !handle.trim()}>
+                    Verbinden
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </Modal>
       )}
