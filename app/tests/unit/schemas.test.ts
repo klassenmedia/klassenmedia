@@ -13,6 +13,7 @@ import {
   keysSchema,
   postSchema,
   USAGE_COSTS,
+  wordpressAccountSchema,
 } from "@/lib/schemas";
 
 describe("postSchema", () => {
@@ -50,6 +51,20 @@ describe("postSchema", () => {
   it("rejects an unknown status or format", () => {
     expect(postSchema.safeParse({ ...valid, status: "archived" }).success).toBe(false);
     expect(postSchema.safeParse({ ...valid, format: "podcast" }).success).toBe(false);
+  });
+
+  it("requires a title when format is article", () => {
+    expect(postSchema.safeParse({ ...valid, format: "article" }).success).toBe(false);
+    expect(
+      postSchema.safeParse({ ...valid, format: "article", title: "  " }).success
+    ).toBe(false);
+    expect(
+      postSchema.safeParse({ ...valid, format: "article", title: "Ein Titel" }).success
+    ).toBe(true);
+  });
+
+  it("does not require a title for non-article formats", () => {
+    expect(postSchema.safeParse({ ...valid, format: "text", title: null }).success).toBe(true);
   });
 
   it("caps media at 20 items", () => {
@@ -96,6 +111,30 @@ describe("accountSchema / inviteSchema", () => {
     expect(
       inviteSchema.safeParse({ platform: "instagram", clientName: "Frauke" }).success
     ).toBe(true);
+  });
+});
+
+describe("wordpressAccountSchema", () => {
+  const valid = {
+    displayName: "Blog Bäckerei Berger",
+    siteUrl: "https://baeckerei-berger.de",
+    username: "redaktion",
+    appPassword: "xxxx xxxx xxxx xxxx xxxx xxxx",
+  };
+
+  it("accepts valid connection data", () => {
+    expect(wordpressAccountSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("rejects a non-URL site address", () => {
+    expect(wordpressAccountSchema.safeParse({ ...valid, siteUrl: "baeckerei-berger" }).success).toBe(
+      false
+    );
+  });
+
+  it("rejects missing username or app password", () => {
+    expect(wordpressAccountSchema.safeParse({ ...valid, username: "" }).success).toBe(false);
+    expect(wordpressAccountSchema.safeParse({ ...valid, appPassword: "" }).success).toBe(false);
   });
 });
 

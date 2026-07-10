@@ -26,6 +26,7 @@ import {
   keysSchema,
   postSchema,
   USAGE_COSTS,
+  wordpressAccountSchema,
 } from "./schemas";
 
 export type ActionResult = {
@@ -110,6 +111,7 @@ export async function savePostAction(input: unknown): Promise<ActionResult> {
     await db.post.update({
       where: { id: postId },
       data: {
+        title: data.format === "article" ? data.title?.trim() : null,
         body: data.body,
         clientId,
         format: data.format,
@@ -129,6 +131,7 @@ export async function savePostAction(input: unknown): Promise<ActionResult> {
       data: {
         workspaceId: workspace.id,
         clientId,
+        title: data.format === "article" ? data.title?.trim() : null,
         body: data.body,
         format: data.format,
         scheduledAt,
@@ -261,6 +264,54 @@ export async function addAccountAction(input: unknown): Promise<ActionResult> {
   const validClientId = await resolveClientId(workspace.id, clientId);
   await db.socialAccount.create({
     data: { workspaceId: workspace.id, ...rest, clientId: validClientId },
+  });
+  return ok();
+}
+
+/**
+ * WordPress verbinden — anders als die Social-"Selbst einloggen"-Demo prüfen
+ * wir die Zugangsdaten (Website-URL + Anwendungskennwort) hier sofort per
+ * echtem API-Call, bevor sie verschlüsselt gespeichert werden. Kein App-Review
+ * nötig — funktioniert sofort, wenn PUBLISH_MODE=live gesetzt ist.
+ */
+export async function addWordPressAccountAction(input: unknown): Promise<ActionResult> {
+  const g = await guard("accounts");
+  if (g.denied) return g.denied;
+  const { workspace } = g.ctx;
+  const parsed = wordpressAccountSchema.safeParse(input);
+  if (!parsed.success) return fail(parsed.error.issues[0].message);
+  const { displayName, siteUrl, username, appPassword, clientId } = parsed.data;
+  const normalizedUrl = siteUrl.replace(/\/+$/, "");
+
+  let res: Response;
+  try {
+    res = await fetch(`${normalizedUrl}/wp-json/wp/v2/users/me`, {
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${username}:${appPassword}`).toString("base64")}`,
+      },
+      signal: AbortSignal.timeout(8_000),
+    });
+  } catch {
+    return fail(`Website unter ${normalizedUrl} nicht erreichbar — URL prüfen.`);
+  }
+  if (!res.ok) {
+    return fail(
+      res.status === 401
+        ? "Zugangsdaten abgelehnt — Benutzername oder Anwendungskennwort prüfen."
+        : `WordPress hat mit Status ${res.status} geantwortet — ist die REST API aktiv?`
+    );
+  }
+
+  const validClientId = await resolveClientId(workspace.id, clientId);
+  await db.socialAccount.create({
+    data: {
+      workspaceId: workspace.id,
+      clientId: validClientId,
+      platform: "wordpress",
+      displayName,
+      handle: normalizedUrl,
+      accessTokenEnc: encrypt(`${username}:${appPassword}`),
+    },
   });
   return ok();
 }

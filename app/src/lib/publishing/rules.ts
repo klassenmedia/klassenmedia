@@ -3,8 +3,9 @@
 
 interface PostShape {
   body: string;
-  format: string; // text | image | video | carousel | story
+  format: string; // text | image | video | carousel | story | article
   mediaCount: number;
+  title?: string | null;
 }
 
 const CHAR_LIMITS: Record<string, number> = {
@@ -15,6 +16,7 @@ const CHAR_LIMITS: Record<string, number> = {
   linkedin: 3000,
   youtube: 5000,
   pinterest: 800,
+  // wordpress bewusst ohne Limit — Blogartikel dürfen lang sein
 };
 
 /** null = ok, sonst Fehlermeldung */
@@ -49,10 +51,19 @@ export function validateForPlatform(post: PostShape, platform: string): string |
         return `Bild-Post ohne Bild ist auf ${platform} nicht möglich`;
       }
       break;
+    case "article":
+      if (platform !== "wordpress") {
+        return `Blogartikel können nur auf der Website (WordPress) veröffentlicht werden`;
+      }
+      if (!post.title || !post.title.trim()) return "Blogartikel braucht einen Titel";
+      break;
   }
 
   if (["youtube", "tiktok"].includes(platform) && post.format !== "video") {
     return `Auf ${platform} können nur Videos veröffentlicht werden`;
+  }
+  if (platform === "wordpress" && post.format !== "article") {
+    return `Auf der Website können nur Blogartikel veröffentlicht werden`;
   }
 
   return null;

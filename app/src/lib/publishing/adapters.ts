@@ -4,6 +4,7 @@
 // nur ohne echten API-Call. Die echten Adapter docken hier an.
 
 import { validateForPlatform } from "./rules";
+import { decrypt } from "../crypto";
 
 export interface PublishTarget {
   platform: string;
@@ -15,6 +16,7 @@ export interface PublishPost {
   body: string;
   format: string;
   mediaCount: number;
+  title?: string | null;
 }
 
 export interface PublishResult {
@@ -46,6 +48,47 @@ function realAdapter(envVar: string): PublisherAdapter {
   };
 }
 
+/**
+ * Echter WordPress-Adapter — anders als die Social-Plattformen kein App-Review
+ * nötig: die Zugangsdaten (Website-URL + "Benutzer:Anwendungskennwort") liegen
+ * direkt am Account, kein globaler Plattform-Key erforderlich.
+ */
+const wordpressAdapter: PublisherAdapter = {
+  async publish(post, target) {
+    const error = validateForPlatform(post, target.platform);
+    if (error) throw new Error(error);
+    if (!target.accessTokenEnc) {
+      throw new Error(
+        "WordPress-Zugangsdaten fehlen — im Account die Website-URL und das Anwendungskennwort hinterlegen."
+      );
+    }
+    const credentials = decrypt(target.accessTokenEnc);
+    const auth = Buffer.from(credentials).toString("base64");
+    const url = `${target.handle.replace(/\/+$/, "")}/wp-json/wp/v2/posts`;
+
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title: post.title, content: post.body, status: "publish" }),
+        signal: AbortSignal.timeout(15_000),
+      });
+    } catch {
+      throw new Error(`WordPress unter ${target.handle} nicht erreichbar.`);
+    }
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      throw new Error(`WordPress hat abgelehnt (${res.status}): ${detail.slice(0, 200)}`);
+    }
+    const data = (await res.json()) as { id: number | string };
+    return { externalId: String(data.id) };
+  },
+};
+
 const REAL_ADAPTERS: Record<string, PublisherAdapter> = {
   instagram: realAdapter("META_APP_ID"),
   facebook: realAdapter("META_APP_ID"),
@@ -54,6 +97,7 @@ const REAL_ADAPTERS: Record<string, PublisherAdapter> = {
   youtube: realAdapter("GOOGLE_CLIENT_ID"),
   x: realAdapter("X_API_KEY"),
   pinterest: realAdapter("PINTEREST_APP_ID"),
+  wordpress: wordpressAdapter,
 };
 
 export function getAdapter(platform: string): PublisherAdapter {

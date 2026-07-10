@@ -65,21 +65,29 @@ async function main() {
     data: { workspaceId: workspace.id, name: "Bäckerei Berger", color: "#f59e0b" },
   });
 
-  const [ig, fb, tt, li, yt] = await Promise.all(
+  const [ig, fb, tt, li, yt, wp] = await Promise.all(
     [
       { platform: "instagram", displayName: "Klassen Media", handle: "@klassenmedia", clientId: clientKM.id },
       { platform: "facebook", displayName: "Bäckerei Berger", handle: "Bäckerei Berger", clientId: clientBB.id },
       { platform: "tiktok", displayName: "Bäckerei Berger", handle: "@baeckerei.berger", clientId: clientBB.id },
       { platform: "linkedin", displayName: "Andreas Klassen", handle: "andreas-klassen", clientId: clientKM.id },
       { platform: "youtube", displayName: "Klassen Media", handle: "@klassenmedia", clientId: clientKM.id },
+      {
+        platform: "wordpress",
+        displayName: "Blog Bäckerei Berger",
+        handle: "https://baeckerei-berger.example",
+        clientId: clientBB.id,
+        accessTokenEnc: null, // Demo: keine echten Zugangsdaten hinterlegt
+      },
     ].map((a) => db.socialAccount.create({ data: { workspaceId: workspace.id, ...a } }))
   );
 
-  async function post(body, dayOffset, hour, minute, accounts, status, format, hues, clientId) {
+  async function post(body, dayOffset, hour, minute, accounts, status, format, hues, clientId, title) {
     return db.post.create({
       data: {
         workspaceId: workspace.id,
         clientId,
+        title,
         body,
         scheduledAt: at(dayOffset, hour, minute),
         status,
@@ -104,6 +112,18 @@ async function main() {
   await post(CAPTIONS.tutorial, 3, 16, 0, [yt], "scheduled", "video", [150], clientKM.id);
   await post(CAPTIONS.job, 5, 8, 30, [li], "scheduled", "text", [], clientKM.id);
   await post(CAPTIONS.story, 8, 11, 15, [fb], "scheduled", "story", [330], clientBB.id);
+  await post(
+    "Warum wir bei jedem Brot auf Sauerteig statt Hefe setzen — und was das für den Geschmack bedeutet. Ein Blick in unsere Backstube und die Zutaten, auf die wir seit drei Generationen schwören.",
+    4,
+    7,
+    0,
+    [wp],
+    "scheduled",
+    "article",
+    [],
+    clientBB.id,
+    "Sauerteig statt Hefe: Warum unser Brot anders schmeckt"
+  );
   // ein Beitrag wartet auf Freigabe (Phase-7-Demo)
   const p8 = await post(CAPTIONS.karussell, 12, 9, 0, [tt, fb], "draft", "carousel", [45, 90, 200], clientBB.id);
   await db.post.update({
@@ -202,7 +222,7 @@ async function main() {
   console.log("Demo-Daten angelegt:");
   console.log("  Login:    demo@klassenmedia.de");
   console.log("  Passwort: demo1234");
-  console.log(`  (${[ig, fb, tt, li, yt].length} Accounts, 8 Posts, 3 Kommentare, 1 Einladung ${invite.token})`);
+  console.log(`  (${[ig, fb, tt, li, yt, wp].length} Accounts, 9 Posts, 3 Kommentare, 1 Einladung ${invite.token})`);
 }
 
 main()

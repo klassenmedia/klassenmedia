@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { validateForPlatform } from "@/lib/publishing/rules";
 
-const post = (over: Partial<{ body: string; format: string; mediaCount: number }> = {}) => ({
+const post = (
+  over: Partial<{ body: string; format: string; mediaCount: number; title: string | null }> = {}
+) => ({
   body: "Hallo Welt",
   format: "image",
   mediaCount: 1,
@@ -75,5 +77,37 @@ describe("validateForPlatform", () => {
     expect(
       validateForPlatform(post({ format: "image", mediaCount: 0 }), "pinterest")
     ).toMatch(/nicht möglich/);
+  });
+
+  it("accepts a titled article on wordpress", () => {
+    expect(
+      validateForPlatform(post({ format: "article", title: "Ein Titel" }), "wordpress")
+    ).toBeNull();
+  });
+
+  it("rejects an article without a title", () => {
+    expect(validateForPlatform(post({ format: "article", title: "" }), "wordpress")).toMatch(
+      /Titel/
+    );
+    expect(validateForPlatform(post({ format: "article" }), "wordpress")).toMatch(/Titel/);
+  });
+
+  it("rejects article format on any non-wordpress platform", () => {
+    for (const platform of ["instagram", "facebook", "x", "linkedin"]) {
+      expect(
+        validateForPlatform(post({ format: "article", title: "Titel" }), platform)
+      ).toMatch(/nur.*(WordPress|Website)/);
+    }
+  });
+
+  it("rejects non-article formats on wordpress", () => {
+    expect(validateForPlatform(post({ format: "image" }), "wordpress")).toMatch(/Blogartikel/);
+  });
+
+  it("does not cap article length via a platform char limit", () => {
+    const long = "x".repeat(10000);
+    expect(
+      validateForPlatform(post({ format: "article", title: "Titel", body: long }), "wordpress")
+    ).toBeNull();
   });
 });

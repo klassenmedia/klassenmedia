@@ -50,6 +50,7 @@ npm run test:e2e # E2E-Suite (Playwright) — baut die App, startet sie gegen ei
 | KI-Bilder (1024×1024) | ✅ echt über OpenAI (`gpt-image-1`), landen in der Medienbibliothek — Demo-Platzhalter ohne Key |
 | BYO-API-Keys | ✅ verschlüsselt gespeichert (AES-256-GCM), werden für echte KI-Aufrufe genutzt |
 | Publishing-Engine (Scheduler, Plattformregeln, Retries) | ✅ läuft lokal im Simulationsmodus — echte Plattform-APIs nach App-Review (`PUBLISH_MODE=live`) |
+| Blog/Website-Kanal (WordPress) | ✅ **echt, kein App-Review nötig** — Website per Anwendungskennwort verbinden, Blogartikel planen, mit `PUBLISH_MODE=live` sofort live |
 | Kunden-Freigabeseite `/connect/<token>` | ✅ funktioniert lokal (OAuth-Weiterleitung folgt in Phase 2b) |
 | Stripe (Abo-Checkout, Credit-Kauf, Webhook, Kundenportal) | ✅ Code fertig — aktiviert sich mit `STRIPE_SECRET_KEY` in `.env`, sonst Demo-Modus |
 | Tests (Unit + E2E, echter Browser) | ✅ `npm run test` (Vitest) + `npm run test:e2e` (Playwright) — siehe Abschnitt „Tests“ |

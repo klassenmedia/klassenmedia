@@ -23,6 +23,7 @@ const MONTHS = [
 
 interface ComposerState {
   id?: string;
+  title: string | null;
   body: string;
   clientId: string | null;
   date: string;
@@ -115,13 +116,21 @@ export default function PlannerPage() {
     setMonth(d.getMonth());
   }
 
+  // Blogartikel gehen nur an Website-Accounts, alle anderen Formate nur an
+  // Social-Accounts — die beiden Welten lassen sich nicht im selben Post mischen.
+  function accountsForContext(clientId: string | null, format: PostFormat) {
+    const byClient = clientId ? accounts.filter((a) => a.clientId === clientId) : accounts;
+    return byClient.filter((a) => (format === "article") === (a.platform === "wordpress"));
+  }
+
   function openNew(dateKey: string) {
     if (!canEdit) return;
     setAiHint(null);
     // Wenn ein Kunde gefiltert ist, den Post gleich diesem Kunden zuordnen
     const clientId = selectedClientId;
-    const preselect = clientId ? accounts.filter((a) => a.clientId === clientId) : accounts;
+    const preselect = accountsForContext(clientId, "image");
     setComposer({
+      title: null,
       body: "",
       clientId,
       date: dateKey,
@@ -138,19 +147,14 @@ export default function PlannerPage() {
     setComposer({ ...post, clientId: post.clientId, media: [...post.media] });
   }
 
-  // Auswählbare Accounts richten sich nach dem gewählten Kunden
-  const composerAccounts = composer
-    ? composer.clientId
-      ? accounts.filter((a) => a.clientId === composer.clientId)
-      : accounts
-    : [];
+  // Auswählbare Accounts richten sich nach Kunde und Format (Blog vs. Social)
+  const composerAccounts = composer ? accountsForContext(composer.clientId, composer.format) : [];
 
   function setComposerClient(clientId: string | null) {
     setComposer((c) => {
       if (!c) return c;
       // Account-Auswahl auf den neuen Kunden eingrenzen
-      const allowed = clientId ? accounts.filter((a) => a.clientId === clientId) : accounts;
-      const allowedIds = new Set(allowed.map((a) => a.id));
+      const allowedIds = new Set(accountsForContext(clientId, c.format).map((a) => a.id));
       return { ...c, clientId, accountIds: c.accountIds.filter((id) => allowedIds.has(id)) };
     });
   }
@@ -158,8 +162,15 @@ export default function PlannerPage() {
   function setFormat(format: PostFormat) {
     setComposer((c) => {
       if (!c) return c;
+      // Account-Auswahl auf den neuen Format-Kontext (Blog vs. Social) eingrenzen
+      const allowedIds = new Set(accountsForContext(c.clientId, format).map((a) => a.id));
       // Medien auf das Limit des neuen Formats kürzen
-      return { ...c, format, media: c.media.slice(0, FORMATS[format].maxMedia) };
+      return {
+        ...c,
+        format,
+        accountIds: c.accountIds.filter((id) => allowedIds.has(id)),
+        media: c.media.slice(0, FORMATS[format].maxMedia),
+      };
     });
   }
 
@@ -219,9 +230,11 @@ export default function PlannerPage() {
 
   async function submit() {
     if (!composer || !composer.body.trim() || composer.accountIds.length === 0) return;
+    if (composer.format === "article" && !composer.title?.trim()) return;
     setSaving(true);
     const ok = await savePost({
       id: composer.id,
+      title: composer.format === "article" ? composer.title?.trim() : null,
       body: composer.body.trim(),
       clientId: composer.clientId,
       date: composer.date,
@@ -338,7 +351,7 @@ export default function PlannerPage() {
                           <span className="text-muted">
                             <FormatIcon format={post.format} size={11} />
                           </span>
-                          <span className="truncate">{post.body}</span>
+                          <span className="truncate">{post.title || post.body}</span>
                         </button>
                       );
                     })}
@@ -438,9 +451,23 @@ export default function PlannerPage() {
               </div>
             )}
 
+            {composer.format === "article" && (
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Titel</label>
+                <input
+                  value={composer.title ?? ""}
+                  onChange={(e) => setComposer({ ...composer, title: e.target.value })}
+                  placeholder="Titel des Blogartikels"
+                  className={inputCls}
+                />
+              </div>
+            )}
+
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-sm font-medium">Text</label>
+                <label className="text-sm font-medium">
+                  {composer.format === "article" ? "Inhalt" : "Text"}
+                </label>
                 <button
                   onClick={suggestCaption}
                   disabled={aiBusy}
@@ -492,9 +519,11 @@ export default function PlannerPage() {
                   );
                 })}
               </div>
-              {accounts.length === 0 && (
+              {composerAccounts.length === 0 && (
                 <p className="text-sm text-muted">
-                  Noch keine Accounts verbunden — zuerst unter „Accounts“ hinzufügen.
+                  {composer.format === "article"
+                    ? "Noch keine Website verbunden — zuerst unter „Accounts“ eine WordPress-Website hinzufügen."
+                    : "Noch keine Accounts verbunden — zuerst unter „Accounts“ hinzufügen."}
                 </p>
               )}
             </div>
@@ -559,7 +588,8 @@ export default function PlannerPage() {
             {FORMATS[composer.format].maxMedia > 0 && (
               <div>
                 <label className="mb-1.5 block text-sm font-medium">
-                  Medien ({composer.media.length}/{FORMATS[composer.format].maxMedia})
+                  {composer.format === "article" ? "Beitragsbild" : "Medien"} ({composer.media.length}/
+                  {FORMATS[composer.format].maxMedia})
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {composer.media.map((item, i) => (
@@ -654,7 +684,12 @@ export default function PlannerPage() {
                 </Button>
                 <Button
                   onClick={submit}
-                  disabled={saving || !composer.body.trim() || composer.accountIds.length === 0}
+                  disabled={
+                    saving ||
+                    !composer.body.trim() ||
+                    composer.accountIds.length === 0 ||
+                    (composer.format === "article" && !composer.title?.trim())
+                  }
                 >
                   {saving
                     ? "Speichert …"

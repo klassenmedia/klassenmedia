@@ -34,6 +34,12 @@ export function FormatIcon({ format, size = 12 }: { format: PostFormat; size?: n
         <circle cx="7" cy="7" r="2.2" fill="currentColor" />
       </>
     ),
+    article: (
+      <>
+        <rect x="2" y="1.8" width="10" height="10.4" rx="1.3" stroke="currentColor" strokeWidth="1.2" fill="none" />
+        <path d="M4.2 4.6h5.6M4.2 6.8h5.6M4.2 9h3.6" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+      </>
+    ),
   };
   return (
     <svg width={size} height={size} viewBox="0 0 14 14" className="shrink-0">

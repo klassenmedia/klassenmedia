@@ -202,6 +202,7 @@ export async function getWorkspaceBundle(
     })),
     posts: posts.map((p) => ({
       id: p.id,
+      title: p.title,
       body: p.body,
       clientId: p.clientId,
       date: dateKey(p.scheduledAt),

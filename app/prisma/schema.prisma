@@ -163,10 +163,11 @@ model SocialAccount {
   // Zuordnung zu einem Kunden (nullable = noch keinem Kunden zugeordnet)
   client      Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
   clientId    String?
-  platform    String // instagram | facebook | tiktok | linkedin | youtube | x | pinterest
+  platform    String // instagram | facebook | tiktok | linkedin | youtube | x | pinterest | wordpress
   displayName String
+  // Bei wordpress: die Website-URL statt eines @handles
   handle      String
-  // OAuth-Tokens (Phase 2): verschlüsselt, nie Klartext
+  // OAuth-Tokens (Phase 2) bzw. bei wordpress "username:app_password" — immer verschlüsselt, nie Klartext
   accessTokenEnc  String?
   refreshTokenEnc String?
   status      String    @default("connected") // connected | token_expired | revoked
@@ -203,8 +204,10 @@ model Post {
   // Zuordnung zu einem Kunden (nullable für Bestandsdaten / kundenlose Posts)
   client      Client?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
   clientId    String?
+  // Nur für format "article" (Blogartikel/Website) — Social-Formate haben keinen Titel
+  title       String?
   body        String
-  format      String        @default("image") // text | image | video | carousel | story
+  format      String        @default("image") // text | image | video | carousel | story | article
   scheduledAt DateTime
   status      String        @default("scheduled") // draft | scheduled | publishing | published | failed
   // Freigabe-Workflow (Phase 7): none = keine Freigabe nötig

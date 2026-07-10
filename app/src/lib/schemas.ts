@@ -12,19 +12,40 @@ export const PLATFORM_VALUES = [
 
 export const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
-export const postSchema = z.object({
-  id: z.string().optional(),
-  body: z.string().trim().min(1, "Text fehlt").max(5000),
+export const postSchema = z
+  .object({
+    id: z.string().optional(),
+    // Nur für format "article" (Blogartikel) — siehe Refine unten
+    title: z.string().trim().max(200).nullable().optional(),
+    body: z.string().trim().min(1, "Text fehlt").max(20000),
+    clientId: z.string().nullable().optional(),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    time: z.string().regex(/^\d{2}:\d{2}$/),
+    accountIds: z.array(z.string()).min(1, "Mindestens ein Account"),
+    // "review" = zur Freigabe einreichen (wird intern als Entwurf + approval=pending abgelegt)
+    status: z.enum(["draft", "scheduled", "review"]),
+    format: z.enum(["text", "image", "video", "carousel", "story", "article"]),
+    media: z
+      .array(z.object({ id: z.string().nullable(), url: z.string().max(500) }))
+      .max(20),
+  })
+  .refine((data) => data.format !== "article" || !!data.title?.trim(), {
+    message: "Blogartikel braucht einen Titel",
+    path: ["title"],
+  });
+
+export const wordpressAccountSchema = z.object({
+  displayName: z.string().trim().min(1, "Bitte einen Namen angeben").max(100),
+  siteUrl: z
+    .string()
+    .trim()
+    .url("Bitte eine vollständige URL angeben (https://…)")
+    .refine((u) => u.startsWith("https://") || u.startsWith("http://"), {
+      message: "Nur http(s)-URLs sind erlaubt",
+    }),
+  username: z.string().trim().min(1, "WordPress-Benutzername fehlt").max(100),
+  appPassword: z.string().trim().min(1, "Anwendungskennwort fehlt").max(300),
   clientId: z.string().nullable().optional(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  time: z.string().regex(/^\d{2}:\d{2}$/),
-  accountIds: z.array(z.string()).min(1, "Mindestens ein Account"),
-  // "review" = zur Freigabe einreichen (wird intern als Entwurf + approval=pending abgelegt)
-  status: z.enum(["draft", "scheduled", "review"]),
-  format: z.enum(["text", "image", "video", "carousel", "story"]),
-  media: z
-    .array(z.object({ id: z.string().nullable(), url: z.string().max(500) }))
-    .max(20),
 });
 
 export const accountSchema = z.object({
@@ -78,7 +99,7 @@ export const CREDIT_PACKAGES: Record<string, { credits: number; label: string }>
 export const USAGE_COSTS: Record<string, number> = { caption: 1, image: 6 };
 
 export const FORMAT_MAX_MEDIA: Record<string, number> = {
-  text: 0, image: 1, video: 1, carousel: 20, story: 1,
+  text: 0, image: 1, video: 1, carousel: 20, story: 1, article: 1,
 };
 
 /** Reiner Guthaben-Check (die atomare DB-Abbuchung passiert in actions.ts/ai-actions.ts). */

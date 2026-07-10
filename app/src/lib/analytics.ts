@@ -42,6 +42,9 @@ const ENGAGEMENT_RATE: Record<Platform, number> = {
   youtube: 0.05,
   x: 0.015,
   pinterest: 0.008,
+  // Website-Traffic ist nicht mit Social-Reichweite vergleichbar — echte
+  // Zahlen kommen später aus WordPress/Google-Analytics-Insights (Phase 6b)
+  wordpress: 0.02,
 };
 
 function followersFor(accountId: string): number {

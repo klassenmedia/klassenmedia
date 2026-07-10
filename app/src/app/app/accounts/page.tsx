@@ -5,7 +5,7 @@ import { useStore } from "@/lib/store";
 import { Button, inputCls, Modal, PlatformChip } from "@/components/ui";
 import { Platform, PLATFORMS } from "@/lib/types";
 
-type ConnectMode = "choose" | "self" | "invite" | "invite-done";
+type ConnectMode = "choose" | "self" | "invite" | "invite-done" | "wordpress";
 
 export default function AccountsPage() {
   const {
@@ -15,6 +15,7 @@ export default function AccountsPage() {
     clients,
     selectedClientId,
     addAccount,
+    connectWordPress,
     removeAccount,
     assignAccount,
     createInvite,
@@ -38,6 +39,11 @@ export default function AccountsPage() {
   const [clientName, setClientName] = useState("");
   const [dialogClientId, setDialogClientId] = useState<string>("");
   const [copied, setCopied] = useState<string | null>(null);
+  const [wpDisplayName, setWpDisplayName] = useState("");
+  const [wpSiteUrl, setWpSiteUrl] = useState("");
+  const [wpUsername, setWpUsername] = useState("");
+  const [wpAppPassword, setWpAppPassword] = useState("");
+  const [wpConnecting, setWpConnecting] = useState(false);
 
   const clientPicker =
     clients.length > 0 ? (
@@ -66,6 +72,10 @@ export default function AccountsPage() {
     setHandle("");
     setClientName(activeClient?.name ?? "");
     setDialogClientId(selectedClientId ?? "");
+    setWpDisplayName(activeClient?.name ? `Blog ${activeClient.name}` : "");
+    setWpSiteUrl("");
+    setWpUsername("");
+    setWpAppPassword("");
     setMode("choose");
   }
 
@@ -78,6 +88,20 @@ export default function AccountsPage() {
       clientId: dialogClientId || null,
     });
     setMode(null);
+  }
+
+  async function submitWordPress() {
+    if (!wpDisplayName.trim() || !wpSiteUrl.trim() || !wpUsername.trim() || !wpAppPassword.trim()) return;
+    setWpConnecting(true);
+    const success = await connectWordPress({
+      displayName: wpDisplayName.trim(),
+      siteUrl: wpSiteUrl.trim(),
+      username: wpUsername.trim(),
+      appPassword: wpAppPassword.trim(),
+      clientId: dialogClientId || null,
+    });
+    setWpConnecting(false);
+    if (success) setMode(null);
   }
 
   async function submitInvite() {
@@ -99,7 +123,9 @@ export default function AccountsPage() {
     <div>
       <label className="mb-1.5 block text-sm font-medium">Plattform</label>
       <div className="flex flex-wrap gap-2">
-        {(Object.keys(PLATFORMS) as Platform[]).map((p) => (
+        {(Object.keys(PLATFORMS) as Platform[])
+          .filter((p) => p !== "wordpress")
+          .map((p) => (
           <button
             key={p}
             onClick={() => setPlatform(p)}
@@ -243,7 +269,7 @@ export default function AccountsPage() {
 
       {mode === "choose" && (
         <Modal title="Account verbinden" onClose={() => setMode(null)} wide>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <button
               onClick={() => setMode("self")}
               className="rounded-2xl border border-line bg-surface-2 p-5 text-left transition hover:border-accent"
@@ -264,6 +290,17 @@ export default function AccountsPage() {
               <p className="mt-1.5 text-sm text-muted">
                 Dein Kunde gibt den Account selbst frei — er öffnet den Link, loggt sich bei der
                 Plattform ein, fertig. Kein Passwort-Austausch.
+              </p>
+            </button>
+            <button
+              onClick={() => setMode("wordpress")}
+              className="rounded-2xl border border-line bg-surface-2 p-5 text-left transition hover:border-accent"
+            >
+              <div className="text-2xl">🌐</div>
+              <h3 className="mt-3 font-semibold">Website verbinden</h3>
+              <p className="mt-1.5 text-sm text-muted">
+                WordPress per Anwendungskennwort — kein Review nötig, sofort live. Ideal für
+                Blogartikel auf der Kunden-Website.
               </p>
             </button>
           </div>
@@ -335,6 +372,77 @@ export default function AccountsPage() {
               </Button>
               <Button onClick={submitInvite} disabled={!clientName.trim()}>
                 Link erstellen
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {mode === "wordpress" && (
+        <Modal title="Website verbinden" onClose={() => setMode(null)}>
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Anzeigename</label>
+              <input
+                value={wpDisplayName}
+                onChange={(e) => setWpDisplayName(e.target.value)}
+                placeholder="z. B. Blog Bäckerei Berger"
+                className={inputCls}
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Website-URL</label>
+              <input
+                value={wpSiteUrl}
+                onChange={(e) => setWpSiteUrl(e.target.value)}
+                placeholder="https://kunde-website.de"
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">WordPress-Benutzername</label>
+              <input
+                value={wpUsername}
+                onChange={(e) => setWpUsername(e.target.value)}
+                placeholder="z. B. redaktion"
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Anwendungskennwort</label>
+              <input
+                value={wpAppPassword}
+                onChange={(e) => setWpAppPassword(e.target.value)}
+                type="password"
+                placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                className={inputCls}
+              />
+              <p className="mt-1.5 text-xs text-muted">
+                Im WordPress-Adminbereich unter Benutzer → Profil → „Anwendungspasswörter“ erzeugen
+                — kein normales Login-Passwort, jederzeit widerrufbar.
+              </p>
+            </div>
+            {clientPicker}
+            <p className="text-xs text-muted">
+              Wir prüfen die Zugangsdaten direkt mit einem Testaufruf, bevor sie verschlüsselt
+              gespeichert werden.
+            </p>
+            <div className="flex justify-end gap-3 border-t border-line pt-4">
+              <Button variant="ghost" onClick={() => setMode("choose")}>
+                Zurück
+              </Button>
+              <Button
+                onClick={submitWordPress}
+                disabled={
+                  wpConnecting ||
+                  !wpDisplayName.trim() ||
+                  !wpSiteUrl.trim() ||
+                  !wpUsername.trim() ||
+                  !wpAppPassword.trim()
+                }
+              >
+                {wpConnecting ? "Prüft Verbindung …" : "Verbinden"}
               </Button>
             </div>
           </div>

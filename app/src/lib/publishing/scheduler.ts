@@ -35,7 +35,7 @@ export async function processDuePosts(): Promise<void> {
 
       try {
         const result = await getAdapter(target.account.platform).publish(
-          { body: post.body, format: post.format, mediaCount: post.media.length },
+          { body: post.body, format: post.format, mediaCount: post.media.length, title: post.title },
           {
             platform: target.account.platform,
             handle: target.account.handle,

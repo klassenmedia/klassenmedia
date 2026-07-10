@@ -167,7 +167,10 @@ export default function BoardPage() {
                           <FormatIcon format={p.format} size={12} />
                         </span>
                       </div>
-                      <p className="mt-2 line-clamp-3 text-sm leading-snug">{p.body}</p>
+                      {p.title && <p className="mt-2 text-sm font-semibold leading-snug">{p.title}</p>}
+                      <p className={`${p.title ? "mt-1" : "mt-2"} line-clamp-3 text-sm leading-snug`}>
+                        {p.body}
+                      </p>
                       <div className="mt-2 flex items-center gap-2 text-[11px] text-muted">
                         <span className="font-mono">
                           {p.date.split("-").reverse().join(".")} · {p.time}
@@ -228,6 +231,8 @@ export default function BoardPage() {
                 )}
               </div>
             )}
+
+            {detail.title && <h3 className="text-base font-semibold">{detail.title}</h3>}
 
             {/* Wartet auf Freigabe → Freigabe-Aktionen (nur mit Recht) */}
             {detail.approval === "pending" ? (

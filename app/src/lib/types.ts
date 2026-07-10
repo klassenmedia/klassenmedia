@@ -5,7 +5,8 @@ export type Platform =
   | "linkedin"
   | "youtube"
   | "x"
-  | "pinterest";
+  | "pinterest"
+  | "wordpress";
 
 export const PLATFORMS: Record<
   Platform,
@@ -18,6 +19,7 @@ export const PLATFORMS: Record<
   youtube: { label: "YouTube", short: "YT", color: "#ff4444" },
   x: { label: "X (Twitter)", short: "X", color: "#6b7280" },
   pinterest: { label: "Pinterest", short: "PI", color: "#e60023" },
+  wordpress: { label: "Website (WordPress)", short: "WP", color: "#21759b" },
 };
 
 export interface SocialAccount {
@@ -76,7 +78,7 @@ export interface ClientDetail {
 
 export type PostStatus = "draft" | "scheduled" | "publishing" | "published" | "failed";
 
-export type PostFormat = "text" | "image" | "video" | "carousel" | "story";
+export type PostFormat = "text" | "image" | "video" | "carousel" | "story" | "article";
 
 export const FORMATS: Record<PostFormat, { label: string; hint: string; maxMedia: number }> = {
   text: { label: "Text", hint: "Nur Text — ideal für X und LinkedIn", maxMedia: 0 },
@@ -84,6 +86,7 @@ export const FORMATS: Record<PostFormat, { label: string; hint: string; maxMedia
   video: { label: "Video / Reel", hint: "Video, Reel oder Short", maxMedia: 1 },
   carousel: { label: "Karussell", hint: "Bis zu 20 Bilder zum Durchwischen (Ads nur 10)", maxMedia: 20 },
   story: { label: "Story", hint: "24 h sichtbar, Hochformat 9:16", maxMedia: 1 },
+  article: { label: "Blogartikel", hint: "Titel + Text für die Website (WordPress)", maxMedia: 1 },
 };
 
 export const STATUS_LABELS: Record<PostStatus, string> = {
@@ -121,6 +124,8 @@ export function mediaBackground(url: string): string {
 
 export interface Post {
   id: string;
+  /** Nur für format "article" (Blogartikel) */
+  title: string | null;
   body: string;
   /** Kunde, für den dieser Beitrag ist (null = keinem zugeordnet) */
   clientId: string | null;

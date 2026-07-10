@@ -34,6 +34,7 @@ import {
   acceptInviteAction,
   ActionResult,
   addAccountAction,
+  addWordPressAccountAction,
   createInviteAction,
   createClientAction,
   updateClientAction,
@@ -69,6 +70,8 @@ import {
 
 export interface SavePostInput {
   id?: string;
+  /** Nur für format "article" (Blogartikel) */
+  title?: string | null;
   body: string;
   clientId?: string | null;
   date: string;
@@ -118,6 +121,14 @@ interface Store {
     handle: string;
     clientId?: string | null;
   }) => Promise<void>;
+  /** Website (WordPress) verbinden — Zugangsdaten werden serverseitig live geprüft */
+  connectWordPress: (a: {
+    displayName: string;
+    siteUrl: string;
+    username: string;
+    appPassword: string;
+    clientId?: string | null;
+  }) => Promise<boolean>;
   removeAccount: (id: string) => Promise<void>;
   createClient: (name: string, color?: string) => Promise<boolean>;
   updateClient: (id: string, patch: { name?: string; color?: string }) => Promise<void>;
@@ -212,6 +223,7 @@ export function StoreProvider({
       deletePost: async (id) => void (await apply(deletePostAction(id))),
       movePost: (id, column) => apply(movePostAction(id, column)),
       addAccount: async (a) => void (await apply(addAccountAction(a))),
+      connectWordPress: (a) => apply(addWordPressAccountAction(a)),
       removeAccount: async (id) => void (await apply(removeAccountAction(id))),
       createClient: (name, color) => apply(createClientAction({ name, color })),
       updateClient: async (id, patch) => void (await apply(updateClientAction(id, patch))),
