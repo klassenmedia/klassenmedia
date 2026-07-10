@@ -49,6 +49,7 @@ model Workspace {
   clients            Client[]
   posts              Post[]
   adCampaigns        AdCampaign[]
+  apiTokens          ApiToken[]
   mediaAssets        MediaAsset[]
   reviewLinks        ReviewLink[]
   activityLogs       ActivityLog[]
@@ -317,6 +318,25 @@ model Comment {
 
   @@index([workspaceId, createdAt])
   @@index([postId])
+}
+
+// ── MCP-Connector (API-Tokens für den Remote-MCP-Server) ──────────────
+// Nutzer:innen legen sich in Claude (Desktop/Code) einen Remote-MCP-Server
+// mit so einem Token an und können dann Kunden/Accounts auflisten sowie
+// Entwürfe/geplante Beiträge direkt aus dem Chat heraus anlegen.
+
+model ApiToken {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  name        String
+  tokenHash   String    @unique
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+
+  @@index([workspaceId])
 }
 
 // ── Ads (Phase 8) ────────────────────────────────────────────────────

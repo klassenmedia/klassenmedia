@@ -241,6 +241,16 @@ export interface TeamInviteItem {
   createdAt: string;
 }
 
+/** API-Token für den MCP-Connector (Claude) — der Rohwert wird nur einmal bei Erstellung gezeigt. */
+export interface ApiTokenItem {
+  id: string;
+  name: string;
+  createdBy: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  revoked: boolean;
+}
+
 export type AiMode = "credits" | "byo";
 
 export interface CreditEntry {

@@ -11,6 +11,7 @@ export const PLATFORM_VALUES = [
 ] as const;
 
 export const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export const postSchema = z
   .object({
@@ -83,8 +84,6 @@ export const changeRoleSchema = z.object({
   role: z.enum(ASSIGNABLE_ROLES as [Role, ...Role[]]),
 });
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
 export const adCampaignSchema = z
   .object({
     postId: z.string().min(1, "Bitte einen Beitrag wählen"),
@@ -98,6 +97,26 @@ export const adCampaignSchema = z
   .refine((d) => d.endDate > d.startDate, {
     message: "Enddatum muss nach dem Startdatum liegen",
     path: ["endDate"],
+  });
+
+export const apiTokenNameSchema = z.string().trim().min(1, "Bitte einen Namen angeben").max(80);
+
+// MCP-Connector: Beitrag per Claude/Tool-Aufruf anlegen — bewusst schlanker
+// als postSchema (kein Medien-Upload, keine Freigabe-Einreichung über MCP).
+export const mcpCreatePostSchema = z
+  .object({
+    body: z.string().trim().min(1, "Text fehlt").max(20000),
+    title: z.string().trim().max(200).optional(),
+    date: z.string().regex(DATE_RE, "Datum im Format JJJJ-MM-TT"),
+    time: z.string().regex(/^\d{2}:\d{2}$/, "Uhrzeit im Format HH:MM"),
+    accountIds: z.array(z.string()).min(1, "Mindestens ein Account"),
+    format: z.enum(["text", "image", "video", "carousel", "story", "article"]),
+    status: z.enum(["draft", "scheduled"]),
+    clientId: z.string().nullable().optional(),
+  })
+  .refine((data) => data.format !== "article" || !!data.title?.trim(), {
+    message: "Blogartikel braucht einen Titel",
+    path: ["title"],
   });
 
 export const captionSchema = z.object({

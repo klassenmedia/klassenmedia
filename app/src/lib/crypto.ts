@@ -30,3 +30,8 @@ export function decrypt(payload: string): string {
     decipher.final(),
   ]).toString("utf8");
 }
+
+/** SHA-256 eines API-Tokens (MCP-Connector) — nur der Hash landet in der DB. */
+export function hashApiToken(raw: string): string {
+  return createHash("sha256").update(raw).digest("hex");
+}

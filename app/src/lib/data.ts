@@ -9,6 +9,7 @@ import {
   AdCampaignItem,
   AdObjective,
   AiMode,
+  ApiTokenItem,
   ApprovalStatus,
   ClientItem,
   CommentItem,
@@ -36,6 +37,8 @@ export interface WorkspaceBundle {
   members: TeamMember[];
   /** Offene Team-Einladungen */
   teamInvites: TeamInviteItem[];
+  /** MCP-Connector: API-Tokens für Claude (Remote-MCP-Server) */
+  apiTokens: ApiTokenItem[];
   plan: PlanTier;
   aiMode: AiMode;
   hasByoKeys: boolean;
@@ -90,6 +93,7 @@ export async function getWorkspaceBundle(
     myMemberships,
     clientRows,
     adCampaignRows,
+    apiTokenRows,
   ] = await Promise.all([
     db.workspace.findUniqueOrThrow({ where: { id: workspaceId } }),
     db.socialAccount.findMany({
@@ -155,6 +159,10 @@ export async function getWorkspaceBundle(
       include: { post: true, account: true },
       orderBy: { createdAt: "desc" },
     }),
+    db.apiToken.findMany({
+      where: { workspaceId, revokedAt: null },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
   return {
@@ -184,6 +192,14 @@ export async function getWorkspaceBundle(
       invitedBy: t.invitedBy,
       createdAt: fmtDate(t.createdAt),
     })),
+    apiTokens: apiTokenRows.map((t) => ({
+      id: t.id,
+      name: t.name,
+      createdBy: t.createdBy,
+      createdAt: fmtDate(t.createdAt),
+      lastUsedAt: t.lastUsedAt ? fmtDate(t.lastUsedAt) : null,
+      revoked: t.revokedAt !== null,
+    })) satisfies ApiTokenItem[],
     plan: workspace.plan as PlanTier,
     aiMode: workspace.aiMode as AiMode,
     hasByoKeys: Boolean(workspace.anthropicKeyEnc || workspace.openaiKeyEnc),
