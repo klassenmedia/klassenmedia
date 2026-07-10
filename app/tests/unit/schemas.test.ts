@@ -216,7 +216,7 @@ describe("captionSchema / imageSchema", () => {
 
 describe("credit & format price tables", () => {
   it("matches the documented usage costs", () => {
-    expect(USAGE_COSTS).toEqual({ caption: 1, image: 6 });
+    expect(USAGE_COSTS).toEqual({ caption: 1, image: 6, learnings: 2 });
   });
 
   it("carousel allows up to 20 media, single-media formats allow 1", () => {

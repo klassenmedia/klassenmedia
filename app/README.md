@@ -42,6 +42,7 @@ npm run test:e2e # E2E-Suite (Playwright) — baut die App, startet sie gegen ei
 | Accounts & Verbindungslinks | ✅ persistiert — echte OAuth-Anbindung folgt in Phase 2 |
 | Inbox (Kommentare liken/antworten/löschen) | ✅ persistiert — Sync mit Plattformen folgt in Phase 2 |
 | Analytics-Dashboard (KPIs, Trend, Kanäle, beste Zeiten, Top-Posts) | ✅ mit deterministischen Demo-Daten — echte Insights-Zahlen mit der Plattform-Anbindung |
+| Lernende Analytics (Klartext-Learnings via Claude) | ✅ echt über Claude — analysiert die Kennzahlen und leitet Handlungsempfehlungen ab (Demo-Platzhalter ohne Key) |
 | Freigabe-Workflow (einreichen, freigeben, Änderungen erbeten) | ✅ echt, inkl. Aktivitätsprotokoll |
 | Team & Rollen (Einladen per Link, Rollen owner/admin/editor/viewer, Workspace-Wechsel) | ✅ echt — Berechtigungen serverseitig in jeder Action erzwungen |
 | Kunden-Freigabelinks (`/review/<token>`, ohne Login) | ✅ echt (Einmal-Token, 7 Tage gültig) |

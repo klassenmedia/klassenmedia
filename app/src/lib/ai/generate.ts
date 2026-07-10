@@ -181,6 +181,41 @@ export async function generateIdeas(
   }
 }
 
+const LEARNINGS_SYSTEM =
+  "Du bist erfahrene:r Social-Media-Analyst:in für ein deutschsprachiges " +
+  "Unternehmen. Du bekommst eine Kennzahlen-Zusammenfassung und leitest " +
+  "daraus knappe, konkrete Erkenntnisse ab — kein Marketing-Sprech, keine " +
+  "Wiederholung der reinen Zahlen, sondern was daraus für die nächsten " +
+  "Beiträge folgt (z. B. welcher Content-Typ, welche Uhrzeit, welcher Kanal). " +
+  "Gib 3 bis 5 kurze Sätze zurück, je einer pro Zeile, ohne Nummerierung, " +
+  "ohne Aufzählungszeichen, ohne Einleitung.";
+
+/** Klartext-Erkenntnisse aus einer Analytics-Zusammenfassung ableiten. */
+export async function generateLearnings(ws: AiWorkspace, summary: string): Promise<string[]> {
+  const key = anthropicKey(ws);
+  if (!key) throw new AiError("Kein Anthropic-API-Key hinterlegt.");
+  const client = new Anthropic({ apiKey: key });
+
+  try {
+    const msg = await client.messages.create({
+      model: TEXT_MODEL,
+      max_tokens: 600,
+      system: LEARNINGS_SYSTEM,
+      messages: [{ role: "user", content: summary }],
+    });
+    const learnings = textFrom(msg)
+      .split("\n")
+      .map((l) => l.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim())
+      .filter(Boolean)
+      .slice(0, 5);
+    if (learnings.length === 0) throw new AiError("Leere Antwort vom KI-Dienst.");
+    return learnings;
+  } catch (e) {
+    if (e instanceof AiError) throw e;
+    throw toAiError(e);
+  }
+}
+
 // ── Bild (OpenAI) ─────────────────────────────────────────────────────
 
 interface OpenAiImageResponse {

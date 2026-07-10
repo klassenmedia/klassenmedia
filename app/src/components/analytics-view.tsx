@@ -3,6 +3,8 @@
 import { Fragment, useMemo, useState } from "react";
 import type { Analytics } from "@/lib/analytics";
 import { getAnalyticsAction } from "@/lib/analytics-actions";
+import { generateLearningsAction } from "@/lib/ai-actions";
+import { useStore } from "@/lib/store";
 import { PlatformChip } from "@/components/ui";
 import { PLATFORMS } from "@/lib/types";
 
@@ -232,18 +234,41 @@ function BestTimes({ data }: { data: Analytics["bestTimes"] }) {
 }
 
 export function AnalyticsView({ initial }: { initial: Analytics }) {
+  const { aiMode, can } = useStore();
   const [data, setData] = useState<Analytics>(initial);
   const [range, setRange] = useState(30);
   const [metric, setMetric] = useState<"reach" | "engagement">("reach");
   const [loading, setLoading] = useState(false);
+  const [learnings, setLearnings] = useState<string[] | null>(null);
+  const [learningsSource, setLearningsSource] = useState<"ai" | "demo" | "empty" | null>(null);
+  const [learningsBusy, setLearningsBusy] = useState(false);
+  const [learningsError, setLearningsError] = useState<string | null>(null);
 
   async function changeRange(days: number) {
     setRange(days);
     setLoading(true);
+    setLearnings(null);
+    setLearningsError(null);
     try {
       setData(await getAnalyticsAction(days));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadLearnings() {
+    setLearningsBusy(true);
+    setLearningsError(null);
+    try {
+      const res = await generateLearningsAction(range);
+      if (res.ok) {
+        setLearnings(res.learnings ?? []);
+        setLearningsSource(res.source ?? null);
+      } else {
+        setLearningsError(res.error ?? "Konnte keine Learnings erzeugen.");
+      }
+    } finally {
+      setLearningsBusy(false);
     }
   }
 
@@ -308,6 +333,56 @@ export function AnalyticsView({ initial }: { initial: Analytics }) {
           </div>
         ))}
       </div>
+
+      {/* Learnings (KI) */}
+      {can("content") && (
+        <div className="mt-6 rounded-2xl border border-line bg-surface p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold">Learnings</h2>
+            <button
+              onClick={loadLearnings}
+              disabled={learningsBusy}
+              className="rounded-lg bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent-fg transition hover:brightness-125 disabled:opacity-60"
+            >
+              {learningsBusy
+                ? "✨ Analysiert …"
+                : `✨ ${learnings ? "Neu erzeugen" : "Learnings generieren"} ${
+                    aiMode === "credits" ? "(2 Credits)" : "(eigener Key)"
+                  }`}
+            </button>
+          </div>
+          <p className="mt-1 text-sm text-muted">
+            Klartext-Erkenntnisse aus den Zahlen oben — was für die nächsten Beiträge folgt.
+          </p>
+
+          {learningsError && <p className="mt-3 text-sm text-danger">{learningsError}</p>}
+
+          {learningsSource === "empty" && (
+            <p className="mt-3 text-sm text-muted">
+              Noch keine veröffentlichten Beiträge im Zeitraum — sobald Posts live gehen, gibt es
+              hier etwas zu lernen.
+            </p>
+          )}
+
+          {learnings && learnings.length > 0 && (
+            <>
+              {learningsSource === "demo" && (
+                <p className="mt-3 text-xs text-muted">
+                  Demo-Platzhalter — echte Learnings mit hinterlegtem Anthropic-Key im KI-Studio.
+                </p>
+              )}
+              <ul className="mt-3 flex flex-col gap-2">
+                {learnings.map((l, i) => (
+                  <li key={i} className="flex gap-2 text-sm">
+                    <span className="mt-0.5 text-accent-fg">✦</span>
+                    <span>{l}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Trend */}
       <div className="mt-6 rounded-2xl border border-line bg-surface p-6">

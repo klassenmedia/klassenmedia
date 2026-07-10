@@ -113,7 +113,7 @@ export const CREDIT_PACKAGES: Record<string, { credits: number; label: string }>
   L: { credits: 10000, label: "Credit-Paket L gekauft (Demo)" },
 };
 
-export const USAGE_COSTS: Record<string, number> = { caption: 1, image: 6 };
+export const USAGE_COSTS: Record<string, number> = { caption: 1, image: 6, learnings: 2 };
 
 export const FORMAT_MAX_MEDIA: Record<string, number> = {
   text: 0, image: 1, video: 1, carousel: 20, story: 1, article: 1,

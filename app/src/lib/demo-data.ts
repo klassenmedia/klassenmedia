@@ -9,3 +9,11 @@ export const AI_CAPTION_IDEAS: string[] = [
   "Der Sommer ist da ☀️ Zeit für frischen Content: Heute zeigen wir euch, was hinter den Kulissen passiert.",
   "Frage an euch: Welches Thema sollen wir als Nächstes aufgreifen? Schreibt's in die Kommentare! 👇",
 ];
+
+// Platzhalter für die Analytics-Learnings, solange kein Anthropic-Key hinterlegt ist.
+export const AI_LEARNINGS_DEMO: string[] = [
+  "Beiträge mit Bild oder Video schneiden deutlich besser ab als reine Text-Posts.",
+  "Die Interaktionsrate ist abends zwischen 18 und 21 Uhr am höchsten — dort lohnt sich Planung.",
+  "Instagram bringt aktuell die meiste Reichweite, Interaktionen sind aber auf allen Kanälen stabil.",
+  "Persönliche Einblicke (Behind the Scenes) performen besser als reine Produktposts.",
+];

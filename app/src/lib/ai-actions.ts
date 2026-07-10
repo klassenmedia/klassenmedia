@@ -8,17 +8,21 @@
 //     Aufruf mangels Key auf einen Demo-Platzhalter zurück, kostet das nichts.
 //   • BYO-Keys werden nur im Provider-Modul entschlüsselt, nie hier geloggt.
 
+import { z } from "zod";
 import { db } from "./db";
 import { requireWorkspace } from "./auth";
 import { getWorkspaceBundle, WorkspaceBundle } from "./data";
-import { AI_CAPTION_IDEAS } from "./demo-data";
+import { AI_CAPTION_IDEAS, AI_LEARNINGS_DEMO } from "./demo-data";
 import { can, type Role } from "./permissions";
 import { captionSchema, imageSchema, USAGE_COSTS } from "./schemas";
+import { getAnalytics } from "./analytics";
+import { summarizeForAi } from "./analytics-summary";
 import {
   AiError,
   generateCaption,
   generateIdeas,
   generateImageFile,
+  generateLearnings,
   imageReady,
   textReady,
 } from "./ai/generate";
@@ -45,6 +49,15 @@ export type ImageResult = {
   error?: string;
   url?: string;
   source?: "ai" | "demo";
+  bundle?: WorkspaceBundle;
+};
+
+export type LearningsResult = {
+  ok: boolean;
+  error?: string;
+  learnings?: string[];
+  /** "ai" = echt generiert · "demo" = Platzhalter · "empty" = noch keine Daten */
+  source?: "ai" | "demo" | "empty";
   bundle?: WorkspaceBundle;
 };
 
@@ -223,4 +236,62 @@ export async function generateImageAction(input: unknown): Promise<ImageResult> 
   }
 
   return { ok: true, url: file.url, source: "ai", bundle: await bundleFor(workspace.id, u, role) };
+}
+
+// ── Learnings (Analytics in Klartext via Claude) ───────────────────────
+
+const rangeSchema = z.coerce.number().int().refine((n) => [7, 30, 90].includes(n), "range");
+
+export async function generateLearningsAction(rangeDays: unknown): Promise<LearningsResult> {
+  const { workspace, user, role } = await requireWorkspace();
+  if (!can(role, "content")) return { ok: false, error: "Deine Rolle darf keine Inhalte erzeugen." };
+  const parsedRange = rangeSchema.safeParse(rangeDays);
+  if (!parsedRange.success) return { ok: false, error: "Ungültiger Zeitraum" };
+
+  const u = { id: user.id, name: user.name, email: user.email };
+  const analytics = await getAnalytics(workspace.id, parsedRange.data);
+
+  if (!analytics.hasPublished) {
+    return {
+      ok: true,
+      learnings: [],
+      source: "empty",
+      bundle: await bundleFor(workspace.id, u, role),
+    };
+  }
+
+  const summary = summarizeForAi(analytics);
+
+  if (!textReady(workspace)) {
+    return {
+      ok: true,
+      learnings: AI_LEARNINGS_DEMO,
+      source: "demo",
+      bundle: await bundleFor(workspace.id, u, role),
+    };
+  }
+
+  const isCredits = workspace.aiMode !== "byo";
+  if (isCredits && !(await hasBalance(workspace.id, USAGE_COSTS.learnings))) {
+    return { ok: false, error: "Nicht genug Credits — im KI-Studio aufladen oder eigenen Key hinterlegen." };
+  }
+
+  let learnings: string[];
+  try {
+    learnings = await generateLearnings(workspace, summary);
+  } catch (e) {
+    return { ok: false, error: e instanceof AiError ? e.message : "KI-Dienst nicht erreichbar." };
+  }
+
+  if (isCredits) {
+    const charged = await chargeCredits(
+      workspace.id,
+      USAGE_COSTS.learnings,
+      "usage_text",
+      "Analytics-Learnings generiert (Claude)"
+    );
+    if (!charged) return { ok: false, error: "Nicht genug Credits." };
+  }
+
+  return { ok: true, learnings, source: "ai", bundle: await bundleFor(workspace.id, u, role) };
 }
