@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ASSIGNABLE_ROLES, can, ROLE_RANK, type Capability, type Role } from "@/lib/permissions";
 
 const ROLES: Role[] = ["owner", "admin", "editor", "viewer"];
-const CAPS: Capability[] = ["content", "approve", "accounts", "ai_settings", "billing", "team"];
+const CAPS: Capability[] = ["content", "approve", "accounts", "ads", "ai_settings", "billing", "team"];
 
 describe("can()", () => {
   it("owner may everything", () => {
@@ -24,12 +24,17 @@ describe("can()", () => {
     expect(can("editor", "approve")).toBe(false);
   });
 
-  it("admin may approve, manage accounts/ai/team, but not billing", () => {
+  it("admin may approve, manage accounts/ads/ai/team, but not billing", () => {
     expect(can("admin", "approve")).toBe(true);
     expect(can("admin", "accounts")).toBe(true);
+    expect(can("admin", "ads")).toBe(true);
     expect(can("admin", "ai_settings")).toBe(true);
     expect(can("admin", "team")).toBe(true);
     expect(can("admin", "billing")).toBe(false);
+  });
+
+  it("editor may not manage ad budgets", () => {
+    expect(can("editor", "ads")).toBe(false);
   });
 });
 

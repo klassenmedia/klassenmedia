@@ -46,6 +46,16 @@ const NAV = [
     ),
   },
   {
+    href: "/app/ads",
+    label: "Ads",
+    icon: (
+      <>
+        <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.4" fill="none" />
+        <path d="M8 5v3l2 1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </>
+    ),
+  },
+  {
     href: "/app/approvals",
     label: "Freigaben",
     icon: (

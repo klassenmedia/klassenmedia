@@ -7,6 +7,8 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import {
   ActivityItem,
+  AdCampaignItem,
+  AdObjective,
   AiMode,
   ClientItem,
   CommentItem,
@@ -67,6 +69,12 @@ import {
   generateIdeasAction,
   generateImageAction,
 } from "./ai-actions";
+import {
+  createAdCampaignAction,
+  deleteAdCampaignAction,
+  pauseAdCampaignAction,
+  resumeAdCampaignAction,
+} from "./ads-actions";
 
 export interface SavePostInput {
   id?: string;
@@ -98,6 +106,7 @@ interface Store {
   setSelectedClient: (id: string | null) => void;
   accounts: SocialAccount[];
   posts: Post[];
+  adCampaigns: AdCampaignItem[];
   invites: ConnectionInvite[];
   comments: CommentItem[];
   reviewLinks: ReviewLinkItem[];
@@ -137,6 +146,19 @@ interface Store {
   createInvite: (platform: Platform, clientName: string, clientId?: string | null) => Promise<void>;
   revokeInvite: (id: string) => Promise<void>;
   acceptInvite: (id: string) => Promise<void>;
+  /** Ads: einen bestehenden Post bewerben (Meta-Boost, aktuell simuliert) */
+  createAdCampaign: (input: {
+    postId: string;
+    accountId: string;
+    clientId?: string | null;
+    objective: AdObjective;
+    budgetTotal: number;
+    startDate: string;
+    endDate: string;
+  }) => Promise<boolean>;
+  pauseAdCampaign: (id: string) => Promise<void>;
+  resumeAdCampaign: (id: string) => Promise<void>;
+  deleteAdCampaign: (id: string) => Promise<void>;
   /** Abo abschließen/wechseln — leitet zu Stripe weiter, wenn konfiguriert */
   checkoutPlan: (p: PlanTier) => Promise<void>;
   setAiMode: (m: AiMode) => Promise<void>;
@@ -234,6 +256,10 @@ export function StoreProvider({
         void (await apply(createInviteAction({ platform, clientName, clientId }))),
       revokeInvite: async (id) => void (await apply(revokeInviteAction(id))),
       acceptInvite: async (id) => void (await apply(acceptInviteAction(id))),
+      createAdCampaign: (input) => apply(createAdCampaignAction(input)),
+      pauseAdCampaign: async (id) => void (await apply(pauseAdCampaignAction(id))),
+      resumeAdCampaign: async (id) => void (await apply(resumeAdCampaignAction(id))),
+      deleteAdCampaign: async (id) => void (await apply(deleteAdCampaignAction(id))),
       checkoutPlan: async (p) => {
         const res = await checkoutPlanAction(p);
         if (res.url) {

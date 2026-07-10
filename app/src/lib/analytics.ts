@@ -2,6 +2,7 @@ import "server-only";
 
 import { db } from "./db";
 import { Platform, PLATFORMS } from "./types";
+import { seeded, rangeIn } from "./prng";
 
 // Analytics-Datenschicht (Phase 6).
 //
@@ -11,27 +12,6 @@ import { Platform, PLATFORMS } from "./types";
 // (veröffentlichten) Posts — gleiche Eingabe = gleiche Zahlen, damit das
 // Dashboard stabil wirkt. In Phase 6b wird ausschließlich diese Datenquelle
 // gegen echte Insights-Aufrufe getauscht; UI und Aggregation bleiben gleich.
-
-// deterministischer PRNG (mulberry32) aus einem String-Seed
-function seeded(str: string): () => number {
-  let h = 1779033703 ^ str.length;
-  for (let i = 0; i < str.length; i++) {
-    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
-    h = (h << 13) | (h >>> 19);
-  }
-  let a = h >>> 0;
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function rangeIn(rng: () => number, min: number, max: number): number {
-  return Math.round(min + rng() * (max - min));
-}
 
 // plattformtypische Engagement-Rate (Anteil der Reichweite, der interagiert)
 const ENGAGEMENT_RATE: Record<Platform, number> = {

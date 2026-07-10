@@ -290,6 +290,51 @@ export const PLANS: Record<
   },
 };
 
+// ── Ads (Phase 8) — Meta-Boost auf einen bestehenden Post ──────────────
+
+export type AdObjective = "reach" | "engagement" | "traffic";
+
+export const AD_OBJECTIVES: Record<AdObjective, { label: string; hint: string }> = {
+  reach: { label: "Mehr Reichweite", hint: "Zeigt die Anzeige möglichst vielen Personen" },
+  engagement: { label: "Mehr Interaktionen", hint: "Likes, Kommentare und Shares steigern" },
+  traffic: { label: "Klicks auf die Website", hint: "Nutzer:innen auf Website/Landingpage lenken" },
+};
+
+export type AdCampaignStatus = "active" | "paused" | "completed";
+
+export const AD_STATUS_LABELS: Record<AdCampaignStatus, string> = {
+  active: "Aktiv",
+  paused: "Pausiert",
+  completed: "Beendet",
+};
+
+export interface AdMetricsView {
+  spend: number;
+  impressions: number;
+  reach: number;
+  clicks: number;
+  ctr: number;
+  costPerResult: number;
+  roas: number | null;
+}
+
+export interface AdCampaignItem {
+  id: string;
+  postId: string;
+  postBody: string;
+  accountId: string;
+  accountHandle: string;
+  platform: Platform;
+  clientId: string | null;
+  objective: AdObjective;
+  budgetTotal: number;
+  startDate: string; // yyyy-mm-dd
+  endDate: string;
+  status: AdCampaignStatus;
+  createdBy: string;
+  metrics: AdMetricsView;
+}
+
 /** yyyy-mm-dd in lokaler Zeit */
 export function toDateKey(d: Date): string {
   const y = d.getFullYear();

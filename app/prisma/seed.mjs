@@ -219,10 +219,28 @@ async function main() {
     ],
   });
 
+  // Ads-Demo: laufende Kampagne für den veröffentlichten Instagram-Post
+  await db.adCampaign.create({
+    data: {
+      workspaceId: workspace.id,
+      clientId: clientKM.id,
+      postId: p1.id,
+      accountId: ig.id,
+      objective: "reach",
+      budgetTotal: 80,
+      startDate: at(-3, 0),
+      endDate: at(4, 23, 59),
+      status: "active",
+      createdBy: "Andreas (Demo)",
+    },
+  });
+
   console.log("Demo-Daten angelegt:");
   console.log("  Login:    demo@klassenmedia.de");
   console.log("  Passwort: demo1234");
-  console.log(`  (${[ig, fb, tt, li, yt, wp].length} Accounts, 9 Posts, 3 Kommentare, 1 Einladung ${invite.token})`);
+  console.log(
+    `  (${[ig, fb, tt, li, yt, wp].length} Accounts, 9 Posts, 1 Ad-Kampagne, 3 Kommentare, 1 Einladung ${invite.token})`
+  );
 }
 
 main()

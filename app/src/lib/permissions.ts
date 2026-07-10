@@ -9,6 +9,7 @@ export type Capability =
   | "content" // Posts/Medien anlegen, bearbeiten, löschen; Inbox beantworten
   | "approve" // Freigeben / Änderungen erbeten / Kunden-Freigabelinks
   | "accounts" // Social Accounts & Verbindungslinks verwalten
+  | "ads" // Werbeanzeigen (Boosts) anlegen, pausieren, löschen — Budget-Verantwortung
   | "ai_settings" // KI-Modus & BYO-Keys ändern
   | "billing" // Tarif wechseln, Credits kaufen, Zahlungsportal
   | "team"; // Mitglieder einladen, Rollen ändern, entfernen
@@ -17,6 +18,7 @@ const MATRIX: Record<Capability, Role[]> = {
   content: ["owner", "admin", "editor"],
   approve: ["owner", "admin"],
   accounts: ["owner", "admin"],
+  ads: ["owner", "admin"],
   ai_settings: ["owner", "admin"],
   billing: ["owner"],
   team: ["owner", "admin"],
@@ -35,7 +37,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 
 export const ROLE_HINTS: Record<Role, string> = {
   owner: "Voller Zugriff inkl. Abrechnung und Team.",
-  admin: "Alles außer Abrechnung: Inhalte, Freigaben, Accounts, KI, Team.",
+  admin: "Alles außer Abrechnung: Inhalte, Freigaben, Accounts, Ads, KI, Team.",
   editor: "Inhalte planen & Inbox beantworten, reicht Beiträge zur Freigabe ein.",
   viewer: "Nur Ansicht — kann nichts ändern.",
 };

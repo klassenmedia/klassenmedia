@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   accountSchema,
+  adCampaignSchema,
   canAfford,
   captionSchema,
   changeRoleSchema,
@@ -135,6 +136,35 @@ describe("wordpressAccountSchema", () => {
   it("rejects missing username or app password", () => {
     expect(wordpressAccountSchema.safeParse({ ...valid, username: "" }).success).toBe(false);
     expect(wordpressAccountSchema.safeParse({ ...valid, appPassword: "" }).success).toBe(false);
+  });
+});
+
+describe("adCampaignSchema", () => {
+  const valid = {
+    postId: "post_1",
+    accountId: "acc_1",
+    objective: "reach",
+    budgetTotal: 50,
+    startDate: "2026-08-01",
+    endDate: "2026-08-08",
+  };
+
+  it("accepts a valid campaign", () => {
+    expect(adCampaignSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("rejects an end date before the start date", () => {
+    expect(
+      adCampaignSchema.safeParse({ ...valid, startDate: "2026-08-10", endDate: "2026-08-01" }).success
+    ).toBe(false);
+  });
+
+  it("rejects a budget below the minimum", () => {
+    expect(adCampaignSchema.safeParse({ ...valid, budgetTotal: 1 }).success).toBe(false);
+  });
+
+  it("rejects an unknown objective", () => {
+    expect(adCampaignSchema.safeParse({ ...valid, objective: "sales" }).success).toBe(false);
   });
 });
 

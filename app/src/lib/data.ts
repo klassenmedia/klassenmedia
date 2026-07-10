@@ -2,9 +2,12 @@ import "server-only";
 
 import { db } from "./db";
 import { imageReady, textReady } from "./ai/generate";
+import { simulateAdMetrics } from "./ads-simulation";
 import type { Role } from "./permissions";
 import {
   ActivityItem,
+  AdCampaignItem,
+  AdObjective,
   AiMode,
   ApprovalStatus,
   ClientItem,
@@ -47,6 +50,7 @@ export interface WorkspaceBundle {
   clients: ClientItem[];
   accounts: SocialAccount[];
   posts: Post[];
+  adCampaigns: AdCampaignItem[];
   invites: ConnectionInvite[];
   creditLog: CreditEntry[];
   comments: CommentItem[];
@@ -85,6 +89,7 @@ export async function getWorkspaceBundle(
     teamInviteRows,
     myMemberships,
     clientRows,
+    adCampaignRows,
   ] = await Promise.all([
     db.workspace.findUniqueOrThrow({ where: { id: workspaceId } }),
     db.socialAccount.findMany({
@@ -144,6 +149,11 @@ export async function getWorkspaceBundle(
       where: { workspaceId },
       include: { _count: { select: { accounts: true, posts: true } } },
       orderBy: { name: "asc" },
+    }),
+    db.adCampaign.findMany({
+      where: { workspaceId },
+      include: { post: true, account: true },
+      orderBy: { createdAt: "desc" },
     }),
   ]);
 
@@ -216,6 +226,25 @@ export async function getWorkspaceBundle(
         .map((pa) => `${pa.account.handle}: ${pa.error}`),
       approval: p.approval as ApprovalStatus,
       approvalNote: p.approvalNote,
+    })),
+    adCampaigns: adCampaignRows.map((c) => ({
+      id: c.id,
+      postId: c.postId,
+      postBody: c.post.title || c.post.body,
+      accountId: c.accountId,
+      accountHandle: c.account.handle,
+      platform: c.account.platform as Platform,
+      clientId: c.clientId,
+      objective: c.objective as AdObjective,
+      budgetTotal: c.budgetTotal,
+      startDate: dateKey(c.startDate),
+      endDate: dateKey(c.endDate),
+      status: c.status as AdCampaignItem["status"],
+      createdBy: c.createdBy,
+      metrics: simulateAdMetrics(
+        { id: c.id, objective: c.objective as AdObjective, budgetTotal: c.budgetTotal, startDate: c.startDate, endDate: c.endDate },
+        new Date()
+      ),
     })),
     invites: invites.map((i) => ({
       id: i.id,

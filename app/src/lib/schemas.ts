@@ -81,6 +81,23 @@ export const changeRoleSchema = z.object({
   role: z.enum(ASSIGNABLE_ROLES as [Role, ...Role[]]),
 });
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+export const adCampaignSchema = z
+  .object({
+    postId: z.string().min(1, "Bitte einen Beitrag wählen"),
+    accountId: z.string().min(1, "Bitte einen Account wählen"),
+    clientId: z.string().nullable().optional(),
+    objective: z.enum(["reach", "engagement", "traffic"]),
+    budgetTotal: z.number().min(5, "Mindestbudget 5 €").max(100000, "Budget zu hoch"),
+    startDate: z.string().regex(DATE_RE),
+    endDate: z.string().regex(DATE_RE),
+  })
+  .refine((d) => d.endDate > d.startDate, {
+    message: "Enddatum muss nach dem Startdatum liegen",
+    path: ["endDate"],
+  });
+
 export const captionSchema = z.object({
   topic: z.string().trim().min(1, "Bitte ein Thema oder ein paar Stichworte angeben").max(1000),
   platform: z.enum(PLATFORM_VALUES).optional(),

@@ -48,6 +48,7 @@ model Workspace {
   teamInvites        TeamInvite[]
   clients            Client[]
   posts              Post[]
+  adCampaigns        AdCampaign[]
   mediaAssets        MediaAsset[]
   reviewLinks        ReviewLink[]
   activityLogs       ActivityLog[]
@@ -123,6 +124,7 @@ model Client {
   invites     ConnectionInvite[]
   contacts    ClientContact[]
   tasks       ClientTask[]
+  adCampaigns AdCampaign[]
 
   @@index([workspaceId])
 }
@@ -173,6 +175,7 @@ model SocialAccount {
   status      String    @default("connected") // connected | token_expired | revoked
   connectedAt DateTime  @default(now())
   postLinks   PostAccount[]
+  adCampaigns AdCampaign[]
 
   @@index([workspaceId])
 }
@@ -220,6 +223,7 @@ model Post {
   accounts    PostAccount[]
   media       MediaAsset[]
   comments    Comment[]
+  adCampaigns AdCampaign[]
 
   @@index([workspaceId, scheduledAt])
   @@index([status, scheduledAt]) // Scheduler-Query (Phase 2): fällige Posts
@@ -306,6 +310,35 @@ model Comment {
   createdAt   DateTime  @default(now())
 
   @@index([workspaceId, createdAt])
+  @@index([postId])
+}
+
+// ── Ads (Phase 8) ────────────────────────────────────────────────────
+// Bewirbt einen bestehenden Post (Meta Marketing API: bestehenden Post
+// "boosten"). Ohne Meta-App-Review laufen die Kennzahlen deterministisch
+// simuliert (siehe src/lib/ads.ts) — echte Zahlen ersetzen dieselbe Anzeige,
+// sobald PUBLISH_MODE=live und ein Meta-Ad-Account verbunden ist.
+
+model AdCampaign {
+  id          String        @id @default(cuid())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  client      Client?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId    String?
+  post        Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId      String
+  account     SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId   String
+  objective   String // reach | engagement | traffic
+  budgetTotal Float // Gesamtbudget in EUR
+  startDate   DateTime
+  endDate     DateTime
+  status      String        @default("active") // active | paused | completed
+  createdBy   String // Name der anlegenden Person
+  createdAt   DateTime      @default(now())
+
+  @@index([workspaceId])
+  @@index([clientId])
   @@index([postId])
 }
 
